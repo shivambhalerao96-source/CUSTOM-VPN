@@ -1,3 +1,13 @@
+#ifndef SETUP_H
+#define SETUP_H
+
+int up();
+int assign_ipaddress();
+void create_tun_interface();
+void reroute();
+void close_tun();
+
+
 #include <fcntl.h>
 #include <linux/if_tun.h>
 #include <linux/if.h>
@@ -68,11 +78,13 @@ reroute();
 
 
 
-
 while(true){
 
 }
-
+close_tun();
 }
 
 
+
+
+#endif   
