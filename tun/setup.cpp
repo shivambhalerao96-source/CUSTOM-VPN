@@ -36,14 +36,12 @@ int assign_ipaddress(){
 //     return 0;
 // }
 
-void create_tun_interface() {
-
-    
+int create_tun_interface() {
 
 int fd = open("/dev/net/tun", O_RDWR); // opens the file /dev/net/tun in read/write mode
 if(fd < 0) {
     perror("Failed to create interface");
-    return ;
+    return -1 ;
 }
 
 struct ifreq ifr = {};
@@ -56,23 +54,16 @@ int f=ioctl(fd, TUNSETIFF, &ifr);
 if(f < 0) {
     perror("Failed to set interface");
    
-    return ;
+    return  -1;
 }
 if (assign_ipaddress() != 0) {
     perror("Failed to set ip address");
-    return ;
+    return -1 ;
 }
 
 up();
 reroute();
-
-
-
-
-while(true){
-
-}
-
+return fd;
 }
 
 
