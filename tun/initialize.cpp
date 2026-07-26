@@ -1,10 +1,14 @@
 #include <cstdlib>
 #include "setup.h"
+#include "read.h"
 
 int main() {
 
-    create_tun_interface();
-
+    int tun_fd = create_tun_interface();
+    if (tun_fd < 0) {
+        return 1;
+    }
+    read_packets(tun_fd);
 
 
     // if (system("g++ setup.cpp -o setup") != 0)
