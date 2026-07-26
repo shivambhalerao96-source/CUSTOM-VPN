@@ -36,7 +36,7 @@ int assign_ipaddress(){
 //     return 0;
 // }
 
-void create_tun_interface() {
+int create_tun_interface() {
 
     
 
