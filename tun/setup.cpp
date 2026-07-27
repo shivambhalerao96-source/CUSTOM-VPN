@@ -7,12 +7,13 @@
 #include <iostream>
 #include <cstdlib>
 #include <cstdio>
-#include "setup.h"
+//#include "setup.h"
 
 using namespace std;
 
 
 void reroute(){
+    system("sudo ip route add 203.0.113.5 via 192.168.1.1 dev wlo1");
     system("sudo ip route replace default dev tun0");
 }
 
