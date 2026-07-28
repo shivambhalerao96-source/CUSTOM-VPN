@@ -21,7 +21,7 @@ int setup_server_tun() {
 
     struct ifreq ifr = {};
     ifr.ifr_flags = IFF_TUN | IFF_NO_PI; 
-    strcpy(ifr.ifr_name, "tun1");
+    strcpy(ifr.ifr_name, "tun0");
 
     if(ioctl(fd, TUNSETIFF, &ifr) < 0) {
         perror("Failed to set TUN interface");
@@ -30,8 +30,8 @@ int setup_server_tun() {
     }
 
     // Configure the Server's internal IP and bring it online
-    system("sudo ip addr add 10.0.0.2/24 dev tun1");
-    system("sudo ip link set dev tun1 up");
+    system("sudo ip addr add 10.0.0.2/24 dev tun0");
+    system("sudo ip link set dev tun0 up");
 
     return fd; 
 }
