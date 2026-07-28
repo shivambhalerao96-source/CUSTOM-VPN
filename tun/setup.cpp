@@ -13,6 +13,8 @@ using namespace std;
 
 
 void reroute(){
+    cout<<"rerouting called"<<endl;
+    
     system("sudo ip route replace default dev tun0");
 }
 
