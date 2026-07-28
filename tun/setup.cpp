@@ -40,6 +40,8 @@ int assign_ipaddress(){
 
 int create_tun_interface() {
 
+    
+
 int fd = open("/dev/net/tun", O_RDWR); // opens the file /dev/net/tun in read/write mode
 if(fd < 0) {
     perror("Failed to create interface");
