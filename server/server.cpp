@@ -11,13 +11,6 @@
 
 using namespace std;
 
-<<<<<<< HEAD
-int main()
-{
-    
-    // Create UDP socket
-    int sockfd = socket(AF_INET, SOCK_DGRAM, 0);
-=======
 // Creates the Server's TUN interface and returns the file descriptor
 int setup_server_tun() {
     int fd = open("/dev/net/tun", O_RDWR);
@@ -25,7 +18,6 @@ int setup_server_tun() {
         perror("Failed to open /dev/net/tun");
         return -1;
     }
->>>>>>> origin/main
 
     struct ifreq ifr = {};
     ifr.ifr_flags = IFF_TUN | IFF_NO_PI; 
