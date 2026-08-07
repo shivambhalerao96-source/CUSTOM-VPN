@@ -19,6 +19,7 @@ void startForwarding(int sockfd, int tun_fd)
 
     while (true)
     {
+        // readfds is noting but a array of bits which tells if the file descriptor at that index is being monitered or not if it is being monitered go shed and read and write 
         fd_set readfds;
         FD_ZERO(&readfds);
         
