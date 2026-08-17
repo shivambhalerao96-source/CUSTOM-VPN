@@ -90,6 +90,8 @@ static void teardown_nat_forwarding() {
                        " -o tun0 -m state --state RELATED,ESTABLISHED -j ACCEPT";
     system(fwdInCmd.c_str());
 
+    g_natConfigured = false;
+
     cout << "NAT/forwarding rules removed." << endl;
 }
 
