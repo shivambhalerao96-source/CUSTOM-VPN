@@ -10,3 +10,4 @@ cl
 chat
 echo
 client/build/
+*.o
