@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 vpn_server
 vpn_client
 chat
@@ -7,3 +8,18 @@ se
 vc
 vpn_server1
 test
+=======
+vpn_server
+vpn_client
+tun/initialize
+tun/reroute
+tun/run
+tun/setup.o
+se
+test
+cl
+chat
+echo
+client/build/
+*.o
+>>>>>>> origin/advait
