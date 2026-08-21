@@ -1,10 +1,2 @@
-vpn_server
-vpn_client
-chat
-cl
-echo
-se
-vc
+vc 
 vpn_server1
-test
-client/build/

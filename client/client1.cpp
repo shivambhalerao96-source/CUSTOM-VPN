@@ -35,7 +35,7 @@ int main()
     serverAddress.sin_family = AF_INET;
     serverAddress.sin_port = htons(8080);
 
-    inet_pton(AF_INET, "35.245.27.43", &serverAddress.sin_addr);
+    inet_pton(AF_INET, "136.70.156.216", &serverAddress.sin_addr);
 
     thread sender(tunToServer, tun_fd, sockfd, serverAddress);
     thread receiver(serverToTun, tun_fd, sockfd);
