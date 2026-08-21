@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 vpn_server
 vpn_client
 chat
@@ -8,7 +7,6 @@ se
 vc
 vpn_server1
 test
-=======
 vpn_server
 vpn_client
 tun/initialize
@@ -22,4 +20,3 @@ chat
 echo
 client/build/
 *.o
->>>>>>> origin/advait
