@@ -39,8 +39,7 @@ string get_router_ip() {
         result += buffer;
     }
 
-    // cout<<"outside llop"<<endl;
-    // cout<<"result="<<result<<endl;
+    
 
     int status = pclose(pipe);
 
@@ -67,7 +66,11 @@ void reroute(){
     // formulates the command to be executed
 
     // make ip packets with destination vpn server go through the wifi 
+<<<<<<< HEAD
     string cmd= string("sudo ip route add 35.245.27.43 via ")+ router+ " dev wlo1";
+=======
+    string cmd= string("sudo ip route add 136.70.156.216 via ")+ router+ " dev wlo1";
+>>>>>>> origin
     system(cmd.c_str());
     // make ip packets with destination other than vpn server go through tun0
     int status = system("sudo ip route add default dev tun0 metric 50");
