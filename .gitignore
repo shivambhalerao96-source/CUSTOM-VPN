@@ -1,13 +1,2 @@
-vpn_server
-vpn_client
-tun/initialize
-tun/reroute
-tun/run
-tun/setup.o
-se
-test
-cl
-chat
-echo
-client/build/
-*.o
+vc 
+vpn_server1
