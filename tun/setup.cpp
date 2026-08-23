@@ -89,8 +89,9 @@ int up(){
 
 }
 
-int assign_ipaddress(){
-     return system("sudo ip addr add 10.0.0.1/24 dev tun0");
+int assign_ipaddress(const string & vpn_ip ){
+    string cmd= "sudo ip addr add " + vpn_ip + " dev tun0";
+     return system(cmd.c_str());
 }
 
 
@@ -99,7 +100,7 @@ int assign_ipaddress(){
 //     return 0;
 // }
 
-int create_tun_interface() {
+int create_tun_interface(const string & vpn_ip) {
 
     
 
@@ -121,7 +122,7 @@ if(f < 0) {
    
     return  -1;
 }
-if (assign_ipaddress() != 0) {
+if (assign_ipaddress(vpn_ip) != 0) {
     perror("Failed to set ip address");
     return -1 ;
 }

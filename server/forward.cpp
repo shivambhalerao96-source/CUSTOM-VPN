@@ -10,8 +10,32 @@
 #include <netinet/udp.h>
 #include <iomanip>
 #include <cctype>
+#include <unordered_map>
+#include <string>
+#include <sstream>
 
 using namespace std;
+struct ClientInfo {
+    sockaddr_in address;
+    string vpnIP;
+};
+
+unordered_map<string, ClientInfo> vpn_ip;// maps the vpn_ip to client info 
+string allocateVPNIP()
+{// here we are allocating the vpn ip address to the client and we are checking if the ip address is already allocated or not if it is allocated we will return the next available ip address
+    for (int i = 1; i <= 254; i++)
+    {
+        string ip = "10.0.0." + to_string(i);
+
+        if (ip == "10.0.0.2")
+            continue; // Server's TUN IP
+
+        if (vpn_ip.find(ip) == vpn_ip.end())
+            return ip;
+    }
+
+    return "";
+}
 
 void printPayload(const unsigned char* data, int len)
 {
@@ -160,6 +184,88 @@ void printPacketInfo(const char* buffer, int bytes)
     cout << "-----------------" << endl;
 }
 
+bool handleHandshake(int sockfd, const char* buffer, int bytesReceived, sockaddr_in& clientAddress, socklen_t clientLength)
+{
+    string message(buffer, bytesReceived);
+
+    if (message != "VPN_HELLO")
+        return false;
+
+    // Check whether this client already exists
+    for (auto& [vpnIP, client] : vpn_ip)
+    {
+        if (client.address.sin_addr.s_addr ==
+                clientAddress.sin_addr.s_addr &&
+            client.address.sin_port ==
+                clientAddress.sin_port)
+        {
+            cout << "Client already registered as "
+                 << vpnIP << endl;
+
+            //string response = "VPN_IP " + vpnIP;
+
+            return true;
+        }
+    }
+
+    // Allocate a new VPN IP
+    string vpnIP = allocateVPNIP();
+
+    if (vpnIP.empty())
+    {
+        string response = "VPN_FULL";
+
+        sendto(
+            sockfd,
+            response.c_str(),
+            response.size(),
+            0,
+            (sockaddr*)&clientAddress,
+            clientLength
+        );
+
+        return true;
+    }
+
+    // Store client information
+    ClientInfo client;
+
+    client.address = clientAddress;
+    client.vpnIP = vpnIP;
+
+    vpn_ip[vpnIP] = client;
+
+    cout << "New VPN client registered" << endl;
+    cout << "VPN IP : " << vpnIP << endl;
+
+    char ip[INET_ADDRSTRLEN];
+
+    inet_ntop(
+        AF_INET,
+        &clientAddress.sin_addr,
+        ip,
+        sizeof(ip)
+    );
+
+    cout << "Real IP: " << ip
+         << ":" << ntohs(clientAddress.sin_port)
+         << endl;
+
+    // Send assigned VPN IP
+    string response = "VPN_IP " + vpnIP;
+
+    sendto(
+        sockfd,
+        response.c_str(),
+        response.size(),
+        0,
+        (sockaddr*)&clientAddress,
+        clientLength
+    );
+
+    return true;
+}
+
 void startForwarding(int sockfd, int tun_fd)
 {
     char buffer[65535];
@@ -197,8 +303,22 @@ void startForwarding(int sockfd, int tun_fd)
             {
                 cout << "\n[CLIENT -> SERVER]" << endl;
                 printPacketInfo(buffer, bytesReceived);
+                    string message(buffer, bytesReceived);
+                // handling the initial handshake with client 
+               if (message == "VPN_HELLO")
+                {          
+                    handleHandshake(
+                        sockfd,
+                        buffer,
+                        bytesReceived,
+                        clientAddress,
+                        clientLength
+                        );
 
-                write(tun_fd, buffer, bytesReceived);
+                    continue;
+                }   
+
+                else write(tun_fd, buffer, bytesReceived);
             }
         }
 
