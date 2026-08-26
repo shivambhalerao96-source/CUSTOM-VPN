@@ -65,7 +65,7 @@ void reroute(){
     // formulates the command to be executed
 
     // make ip packets with destination vpn server go through the wifi 
-    string cmd= string("sudo ip route add 136.70.156.216 via ")+ router+ " dev wlo1";
+    string cmd= string("sudo ip route add 34.145.231.1 via ")+ router+ " dev wlo1";
     system(cmd.c_str());
     // make ip packets with destination other than vpn server go through tun0
     int status = system("sudo ip route add default dev tun0 metric 50");
