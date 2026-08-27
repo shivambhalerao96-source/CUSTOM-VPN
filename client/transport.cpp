@@ -50,10 +50,9 @@ string receiveHandshake(int sockfd)
         return "";
     }
 
-    if (message.find("VPN IP : ") != string::npos) {
+    if (message.rfind("VPN_IP ", 0) == 0) {
         cout << "VPN IP received correctly!" << std::endl;
-        // assingn the vpn ip to the client address
-        string vpnIP = message.substr(9); // Extract the VPN IP from the message
+        string vpnIP = message.substr(7);
         cout << "Assigned VPN IP: " << vpnIP << endl;
         return vpnIP;
 
