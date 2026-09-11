@@ -1,4 +1,5 @@
 #include "forward.h"
+#include "../crypto/handshake.h"
 #include <iostream>
 #include <sys/socket.h>
 #include <arpa/inet.h>
@@ -18,6 +19,7 @@ using namespace std;
 struct ClientInfo {
     sockaddr_in address;
     string vpnIP;
+    X25519SharedSecret sharedSecret;
 };
 
 unordered_map<string, ClientInfo> vpn_ip;// maps the vpn_ip to client info 
@@ -187,9 +189,29 @@ string allocateVPNIP()
 bool handleHandshake(int sockfd, const char* buffer, int bytesReceived, sockaddr_in& clientAddress, socklen_t clientLength)
 {
     string message(buffer, bytesReceived);
+    const string prefix = "VPN_HELLO ";
 
-    if (message != "VPN_HELLO")
+    if (message.rfind("VPN_HELLO", 0) != 0)
         return false;
+
+    if (message.rfind(prefix, 0) != 0)
+    {
+        cerr << "Client X25519 public key is missing" << endl;
+        string response = "VPN_HANDSHAKE_FAILED";
+        sendto(sockfd, response.c_str(), response.size(), 0,
+               (sockaddr*)&clientAddress, clientLength);
+        return true;
+    }
+
+    X25519PublicKey clientPublicKey{};
+    if (!decodeX25519PublicKey(message.substr(prefix.size()), clientPublicKey))
+    {
+        cerr << "Invalid client X25519 public key" << endl;
+        string response = "VPN_HANDSHAKE_FAILED";
+        sendto(sockfd, response.c_str(), response.size(), 0,
+               (sockaddr*)&clientAddress, clientLength);
+        return true;
+    }
 
     // Check whether this client already exists
     for (auto& [vpnIP, client] : vpn_ip)
@@ -227,11 +249,34 @@ bool handleHandshake(int sockfd, const char* buffer, int bytesReceived, sockaddr
         return true;
     }
 
+    X25519KeyPair serverKeyPair;
+    if (!generateX25519KeyPair(serverKeyPair))
+    {
+        cerr << "Failed to generate the server X25519 key pair" << endl;
+        string response = "VPN_HANDSHAKE_FAILED";
+        sendto(sockfd, response.c_str(), response.size(), 0,
+               (sockaddr*)&clientAddress, clientLength);
+        return true;
+    }
+
     // Store client information
-    ClientInfo client;
+    ClientInfo client{};
 
     client.address = clientAddress;
     client.vpnIP = vpnIP;
+
+    if (!deriveX25519SharedSecret(
+            client.sharedSecret,
+            serverKeyPair.privateKey,
+            clientPublicKey))
+    {
+        cerr << "Failed to derive the X25519 shared secret" << endl;
+        wipeX25519PrivateKey(serverKeyPair);
+        string response = "VPN_HANDSHAKE_FAILED";
+        sendto(sockfd, response.c_str(), response.size(), 0,
+               (sockaddr*)&clientAddress, clientLength);
+        return true;
+    }
 
     vpn_ip[vpnIP] = client;
 
@@ -252,7 +297,9 @@ bool handleHandshake(int sockfd, const char* buffer, int bytesReceived, sockaddr
          << endl;
 
     // Send assigned VPN IP
-    string response = "VPN_IP " + vpnIP;
+    string response =
+        "VPN_IP " + vpnIP + " " +
+        encodeX25519PublicKey(serverKeyPair.publicKey);
 
     sendto(
         sockfd,
@@ -262,6 +309,10 @@ bool handleHandshake(int sockfd, const char* buffer, int bytesReceived, sockaddr
         (sockaddr*)&clientAddress,
         clientLength
     );
+
+    cout << "X25519 key agreement completed. Shared-secret fingerprint: "
+         << sharedSecretFingerprint(client.sharedSecret) << endl;
+    wipeX25519PrivateKey(serverKeyPair);
 
     return true;
 }
@@ -305,7 +356,7 @@ void startForwarding(int sockfd, int tun_fd)
                 
                     string message(buffer, bytesReceived);
                 // handling the initial handshake with client 
-               if (message == "VPN_HELLO")
+               if (message.rfind("VPN_HELLO", 0) == 0)
                 {          
                     handleHandshake(
                         sockfd,

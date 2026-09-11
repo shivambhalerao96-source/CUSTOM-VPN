@@ -11,6 +11,12 @@ using namespace std;
 
 int main()
 {
+    if (!initializeCrypto())
+    {
+        cerr << "Libsodium initialization failed." << endl;
+        return 1;
+    }
+
     int sockfd = socket(AF_INET, SOCK_DGRAM, 0);
 
     if (sockfd < 0)
@@ -29,15 +35,21 @@ int main()
 
     // getting the vpn ip from the server and creating the tun interface with that ip
     cout << "Sending handshake to server..." << endl;
-    int st=sendHandshake(sockfd, serverAddress);
+    X25519KeyPair clientKeyPair;
+    X25519SharedSecret sharedSecret{};
+
+    int st = sendHandshake(sockfd, serverAddress, clientKeyPair);
     if(st<0){
         cerr<<"Failed to send handshake"<<endl;
+        wipeX25519PrivateKey(clientKeyPair);
         return 1;
     }
-    string vpn_ip = receiveHandshake(sockfd);
+    string vpn_ip = receiveHandshake(sockfd, clientKeyPair, sharedSecret);
+    wipeX25519PrivateKey(clientKeyPair);
     if (vpn_ip.empty())
     {
         cerr << "Failed to receive handshake or server is full." << endl;
+        wipeX25519SharedSecret(sharedSecret);
         return 1;
     }
     int tun_fd = create_tun_interface(vpn_ip);
@@ -45,6 +57,7 @@ int main()
     if (tun_fd < 0)
     {
         cerr << "Failed to create TUN interface." << endl;
+        wipeX25519SharedSecret(sharedSecret);
         return 1;
     }
 
@@ -56,6 +69,8 @@ int main()
 
     sender.join();
     receiver.join();
+
+    wipeX25519SharedSecret(sharedSecret);
     
     close(sockfd);
 

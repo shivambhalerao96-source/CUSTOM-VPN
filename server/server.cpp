@@ -11,6 +11,7 @@
 #include <cstdlib>
 #include <csignal>
 #include "forward.h"
+#include "../crypto/handshake.h"
 
 using namespace std;
 
@@ -130,6 +131,10 @@ int setup_server_tun() {
 }
 
 int main() {
+    if (!initializeCrypto()) {
+        cerr << "Libsodium initialization failed." << endl;
+        return 1;
+    }
     
     signal(SIGINT, handle_sigint);
     signal(SIGTERM, handle_sigint);
