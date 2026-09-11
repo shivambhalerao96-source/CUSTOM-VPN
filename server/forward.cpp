@@ -330,10 +330,44 @@ void startForwarding(int sockfd, int tun_fd)
             if (bytesRead > 0)
             {
                 cout << "\n[SERVER/TUN -> CLIENT]" << endl;
-               
+
+                if (bytesRead < static_cast<int>(sizeof(iphdr)))
+                {
+                    cerr << "Short/malformed IPv4 packet from TUN; dropping packet." << endl;
+                    continue;
+                }
+
+                iphdr* ipHeader = reinterpret_cast<iphdr*>(buffer);
+                int ipHeaderLength = ipHeader->ihl * 4;
+
+                if (ipHeader->version != 4 ||
+                    ipHeaderLength < static_cast<int>(sizeof(iphdr)) ||
+                    ipHeaderLength > bytesRead)
+                {
+                    cerr << "Malformed IPv4 packet from TUN; dropping packet." << endl;
+                    continue;
+                }
+
+                char destinationIP[INET_ADDRSTRLEN];
+                if (inet_ntop(AF_INET, &ipHeader->daddr,
+                              destinationIP, sizeof(destinationIP)) == nullptr)
+                {
+                    cerr << "Could not determine TUN packet destination; dropping packet." << endl;
+                    continue;
+                }
+
+                auto client = vpn_ip.find(destinationIP);
+                if (client == vpn_ip.end())
+                {
+                    cerr << "No registered client for VPN IP "
+                         << destinationIP << "; dropping packet." << endl;
+                    continue;
+                }
+
                 sendto(
                     sockfd, buffer, bytesRead, 0,
-                    (sockaddr*)&clientAddress, clientLength);
+                    (sockaddr*)&client->second.address,
+                    sizeof(client->second.address));
             }
         }
     }
