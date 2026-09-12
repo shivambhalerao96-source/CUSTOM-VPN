@@ -33,7 +33,8 @@ void tunToServer(int tun_fd, int sockfd, sockaddr_in serverAddress)
 string receiveHandshake(
     int sockfd,
     const X25519KeyPair& clientKeyPair,
-    X25519SharedSecret& sharedSecret)
+    X25519SharedSecret& sharedSecret,
+    SessionKeys& sessionKeys)
 {
     char buffer[65535];
     //socklen_t clientLength = sizeof(clientAddress);
@@ -78,6 +79,13 @@ string receiveHandshake(
                 serverPublicKey))
         {
             cerr << "Failed to derive the X25519 shared secret" << endl;
+            return "";
+        }
+
+        if (!deriveSessionKeys(sessionKeys, sharedSecret))
+        {
+            cerr << "Failed to derive session keys" << endl;
+            wipeX25519SharedSecret(sharedSecret);
             return "";
         }
 
