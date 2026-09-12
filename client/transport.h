@@ -4,12 +4,14 @@
 #include <arpa/inet.h>
 #include <string>
 #include "../crypto/handshake.h"
+#include "../crypto/session_keys.h"
 using namespace std;
 void tunToServer(int tun_fd, int sockfd, sockaddr_in serverAddress);
 string receiveHandshake(
     int sockfd,
     const X25519KeyPair& clientKeyPair,
-    X25519SharedSecret& sharedSecret);
+    X25519SharedSecret& sharedSecret,
+    SessionKeys& sessionKeys);
 int sendHandshake(
     int sockfd,
     sockaddr_in serverAddress,

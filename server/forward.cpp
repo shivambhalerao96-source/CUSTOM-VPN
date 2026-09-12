@@ -1,5 +1,6 @@
 #include "forward.h"
 #include "../crypto/handshake.h"
+#include "../crypto/session_keys.h"
 #include <iostream>
 #include <sys/socket.h>
 #include <arpa/inet.h>
@@ -20,6 +21,13 @@ struct ClientInfo {
     sockaddr_in address;
     string vpnIP;
     X25519SharedSecret sharedSecret;
+    SessionKeys sessionKeys;
+
+    ~ClientInfo()
+    {
+        wipeX25519SharedSecret(sharedSecret);
+        wipeSessionKeys(sessionKeys);
+    }
 };
 
 unordered_map<string, ClientInfo> vpn_ip;// maps the vpn_ip to client info 
@@ -278,7 +286,17 @@ bool handleHandshake(int sockfd, const char* buffer, int bytesReceived, sockaddr
         return true;
     }
 
-    vpn_ip[vpnIP] = client;
+    if (!deriveSessionKeys(client.sessionKeys, client.sharedSecret))
+    {
+        cerr << "Failed to derive session keys" << endl;
+        wipeX25519PrivateKey(serverKeyPair);
+        string response = "VPN_HANDSHAKE_FAILED";
+        sendto(sockfd, response.c_str(), response.size(), 0,
+               (sockaddr*)&clientAddress, clientLength);
+        return true;
+    }
+
+    vpn_ip.emplace(vpnIP, client);
 
     cout << "New VPN client registered" << endl;
     cout << "VPN IP : " << vpnIP << endl;
@@ -323,7 +341,7 @@ void startForwarding(int sockfd, int tun_fd)
     sockaddr_in clientAddress{};
     socklen_t clientLength = sizeof(clientAddress);
 
-    cout << "Unencrypted tunnel bridge initialized." << endl;
+    cout << "encrypted tunnel bridge initialized." << endl;
     cout << "Waiting for raw packets..." << endl;
 
     while (true)

@@ -37,6 +37,7 @@ int main()
     cout << "Sending handshake to server..." << endl;
     X25519KeyPair clientKeyPair;
     X25519SharedSecret sharedSecret{};
+    SessionKeys sessionKeys{};
 
     int st = sendHandshake(sockfd, serverAddress, clientKeyPair);
     if(st<0){
@@ -44,12 +45,17 @@ int main()
         wipeX25519PrivateKey(clientKeyPair);
         return 1;
     }
-    string vpn_ip = receiveHandshake(sockfd, clientKeyPair, sharedSecret);
+    string vpn_ip = receiveHandshake(
+        sockfd,
+        clientKeyPair,
+        sharedSecret,
+        sessionKeys);
     wipeX25519PrivateKey(clientKeyPair);
     if (vpn_ip.empty())
     {
         cerr << "Failed to receive handshake or server is full." << endl;
         wipeX25519SharedSecret(sharedSecret);
+        wipeSessionKeys(sessionKeys);
         return 1;
     }
     int tun_fd = create_tun_interface(vpn_ip);
@@ -58,6 +64,7 @@ int main()
     {
         cerr << "Failed to create TUN interface." << endl;
         wipeX25519SharedSecret(sharedSecret);
+        wipeSessionKeys(sessionKeys);
         return 1;
     }
 
@@ -71,6 +78,7 @@ int main()
     receiver.join();
 
     wipeX25519SharedSecret(sharedSecret);
+    wipeSessionKeys(sessionKeys);
     
     close(sockfd);
 
