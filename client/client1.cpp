@@ -1,5 +1,6 @@
 #include <iostream>
 #include <thread>
+#include <functional>
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <unistd.h>
@@ -71,8 +72,13 @@ int main()
     cout << "TUN interface created successfully." << endl;
 
     
-    thread sender(tunToServer, tun_fd, sockfd, serverAddress);
-    thread receiver(serverToTun, tun_fd, sockfd);
+    thread sender(
+        tunToServer,
+        tun_fd,
+        sockfd,
+        serverAddress,
+        cref(sessionKeys));
+    thread receiver(serverToTun, tun_fd, sockfd, cref(sessionKeys));
 
     sender.join();
     receiver.join();

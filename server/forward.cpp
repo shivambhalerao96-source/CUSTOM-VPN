@@ -1,5 +1,6 @@
 #include "forward.h"
 #include "../crypto/handshake.h"
+#include "../crypto/packet_crypto.h"
 #include "../crypto/session_keys.h"
 #include <iostream>
 #include <sys/socket.h>
@@ -15,6 +16,7 @@
 #include <unordered_map>
 #include <string>
 #include <sstream>
+#include <vector>
 
 using namespace std;
 struct ClientInfo {
@@ -337,7 +339,7 @@ bool handleHandshake(int sockfd, const char* buffer, int bytesReceived, sockaddr
 
 void startForwarding(int sockfd, int tun_fd)
 {
-    char buffer[65535];
+    unsigned char buffer[kMaxVpnTunPacketBytes];
     sockaddr_in clientAddress{};
     socklen_t clientLength = sizeof(clientAddress);
 
@@ -364,6 +366,7 @@ void startForwarding(int sockfd, int tun_fd)
         // Client -> Server -> TUN
         if (FD_ISSET(sockfd, &readfds))
         {
+            clientLength = sizeof(clientAddress);
             int bytesReceived = recvfrom(
                 sockfd, buffer, sizeof(buffer), 0,
                 (sockaddr*)&clientAddress, &clientLength);
@@ -372,13 +375,15 @@ void startForwarding(int sockfd, int tun_fd)
             {
                 cout << "\n[CLIENT -> SERVER]" << endl;
                 
-                    string message(buffer, bytesReceived);
+                string message(
+                    reinterpret_cast<const char*>(buffer),
+                    bytesReceived);
                 // handling the initial handshake with client 
                if (message.rfind("VPN_HELLO", 0) == 0)
                 {          
                     handleHandshake(
                         sockfd,
-                        buffer,
+                        reinterpret_cast<const char*>(buffer),
                         bytesReceived,
                         clientAddress,
                         clientLength
@@ -387,7 +392,46 @@ void startForwarding(int sockfd, int tun_fd)
                     continue;
                 }   
 
-                else write(tun_fd, buffer, bytesReceived);
+                else
+                {
+                    auto client = find_if(
+                        vpn_ip.begin(),
+                        vpn_ip.end(),
+                        [&](const auto& entry)
+                        {
+                            return entry.second.address.sin_addr.s_addr ==
+                                       clientAddress.sin_addr.s_addr &&
+                                   entry.second.address.sin_port ==
+                                       clientAddress.sin_port;
+                        });
+
+                    if (client == vpn_ip.end())
+                    {
+                        cerr << "Received packet from an unregistered client; dropping packet" << endl;
+                        continue;
+                    }
+
+                    vector<unsigned char> plaintext;
+                    if (!decryptVpnPacket(
+                            buffer,
+                            static_cast<size_t>(bytesReceived),
+                            client->second.sessionKeys.clientToServer,
+                            plaintext))
+                    {
+                        cerr << "Client-to-server packet authentication failed; dropping packet" << endl;
+                        continue;
+                    }
+
+                    ssize_t bytesWritten = write(
+                        tun_fd,
+                        plaintext.data(),
+                        plaintext.size());
+
+                    if (bytesWritten < 0)
+                        perror("Failed to write decrypted packet to TUN");
+                    else if (static_cast<size_t>(bytesWritten) != plaintext.size())
+                        cerr << "Failed to write complete decrypted packet to TUN" << endl;
+                }
             }
         }
 
@@ -433,10 +477,29 @@ void startForwarding(int sockfd, int tun_fd)
                     continue;
                 }
 
-                sendto(
-                    sockfd, buffer, bytesRead, 0,
+                vector<unsigned char> encryptedPacket;
+                if (!encryptVpnPacket(
+                        buffer,
+                        static_cast<size_t>(bytesRead),
+                        client->second.sessionKeys.serverToClient,
+                        encryptedPacket))
+                {
+                    cerr << "Failed to encrypt server-to-client packet; dropping packet" << endl;
+                    continue;
+                }
+
+                ssize_t bytesSent = sendto(
+                    sockfd,
+                    encryptedPacket.data(),
+                    encryptedPacket.size(),
+                    0,
                     (sockaddr*)&client->second.address,
                     sizeof(client->second.address));
+
+                if (bytesSent < 0)
+                    perror("Failed to send encrypted packet to client");
+                else if (static_cast<size_t>(bytesSent) != encryptedPacket.size())
+                    cerr << "Failed to send complete encrypted packet to client" << endl;
             }
         }
     }
