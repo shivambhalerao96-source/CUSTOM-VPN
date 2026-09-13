@@ -21,10 +21,11 @@ int main()
 
     cout << "UDP socket created successfully." << endl;
 
-    sockaddr_in serverAddress{};
+    sockaddr_in serverAddress{};// creates a structure which stores details about server
     serverAddress.sin_family = AF_INET;
     serverAddress.sin_port = htons(8080);
 
+    // using ui ux accept which server we want to use
     inet_pton(AF_INET, "34.145.231.1", &serverAddress.sin_addr);
 
     // getting the vpn ip from the server and creating the tun interface with that ip
