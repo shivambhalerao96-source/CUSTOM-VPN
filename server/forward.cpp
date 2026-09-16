@@ -9,6 +9,7 @@
 #include <sys/select.h>
 #include <algorithm>
 #include <netinet/ip.h>
+#include <netinet/ip6.h>
 #include <netinet/tcp.h>
 #include <netinet/udp.h>
 #include <iomanip>
@@ -22,6 +23,7 @@ using namespace std;
 struct ClientInfo {
     sockaddr_in address;
     string vpnIP;
+    string vpnIPv6;
     X25519SharedSecret sharedSecret;
     SessionKeys sessionKeys;
 
@@ -33,6 +35,21 @@ struct ClientInfo {
 };
 
 unordered_map<string, ClientInfo> vpn_ip;// maps the vpn_ip to client info 
+
+// Maps a client's VPN IPv6 address back to the VPN IPv4 address used as the
+// key in vpn_ip above. This keeps ClientInfo (and its secret-wiping
+// destructor) stored in exactly one place; the IPv6 map is just a second
+// index onto the same records, so nothing about session-key ownership or
+// lifetime changes.
+unordered_map<string, string> vpn_ipv6_to_ipv4;
+
+// ULA (Unique Local Address) /64 prefix used for the VPN's internal IPv6
+// addressing, analogous to the 10.0.0.0/24 used for IPv4. This range is not
+// globally routable by itself -- getting it out to the real IPv6 Internet
+// is handled by NAT66 (ip6tables MASQUERADE) on the server, set up in
+// server.cpp, exactly the way MASQUERADE already does it for the IPv4 range.
+static const string kVpnIPv6Prefix = "fd00:dead:beef::";
+
 string allocateVPNIP()
 {// here we are allocating the vpn ip address to the client and we are checking if the ip address is already allocated or not if it is allocated we will return the next available ip address
     for (int i = 1; i <= 254; i++)
@@ -47,6 +64,33 @@ string allocateVPNIP()
     }
 
     return "";
+}
+
+// Derives this client's VPN IPv6 address from the IPv4 address it was just
+// allocated, by reusing the same host id (the last IPv4 octet) inside the
+// IPv6 /64 range. Because it's derived from an already-uniquely-allocated
+// IPv4 address, it's automatically unique too -- no separate IPv6 allocation
+// table or free-list is needed, and allocateVPNIP() above stays untouched.
+string deriveVpnIPv6FromIPv4(const string& vpnIPv4)
+{
+    size_t lastDot = vpnIPv4.find_last_of('.');
+    if (lastDot == string::npos)
+        return "";
+
+    string hostIdText = vpnIPv4.substr(lastDot + 1);
+    int hostId = 0;
+    try
+    {
+        hostId = stoi(hostIdText);
+    }
+    catch (...)
+    {
+        return "";
+    }
+
+    ostringstream oss;
+    oss << kVpnIPv6Prefix << hex << hostId;
+    return oss.str();
 }
 
 // void printPayload(const unsigned char* data, int len)
@@ -259,6 +303,10 @@ bool handleHandshake(int sockfd, const char* buffer, int bytesReceived, sockaddr
         return true;
     }
 
+    // Derive the paired VPN IPv6 address from the IPv4 one that was just
+    // allocated (see deriveVpnIPv6FromIPv4 for why this is safe/unique).
+    string vpnIPv6 = deriveVpnIPv6FromIPv4(vpnIP);
+
     X25519KeyPair serverKeyPair;
     if (!generateX25519KeyPair(serverKeyPair))
     {
@@ -274,6 +322,7 @@ bool handleHandshake(int sockfd, const char* buffer, int bytesReceived, sockaddr
 
     client.address = clientAddress;
     client.vpnIP = vpnIP;
+    client.vpnIPv6 = vpnIPv6;
 
     if (!deriveX25519SharedSecret(
             client.sharedSecret,
@@ -299,9 +348,12 @@ bool handleHandshake(int sockfd, const char* buffer, int bytesReceived, sockaddr
     }
 
     vpn_ip.emplace(vpnIP, client);
+    if (!vpnIPv6.empty())
+        vpn_ipv6_to_ipv4[vpnIPv6] = vpnIP;
 
     cout << "New VPN client registered" << endl;
-    cout << "VPN IP : " << vpnIP << endl;
+    cout << "VPN IPv4 : " << vpnIP << endl;
+    cout << "VPN IPv6 : " << vpnIPv6 << endl;
 
     char ip[INET_ADDRSTRLEN];
 
@@ -316,9 +368,9 @@ bool handleHandshake(int sockfd, const char* buffer, int bytesReceived, sockaddr
          << ":" << ntohs(clientAddress.sin_port)
          << endl;
 
-    // Send assigned VPN IP
+    // Send assigned VPN IPs. Wire format: "VPN_IP <ipv4> <ipv6> <server-pubkey-hex>".
     string response =
-        "VPN_IP " + vpnIP + " " +
+        "VPN_IP " + vpnIP + " " + vpnIPv6 + " " +
         encodeX25519PublicKey(serverKeyPair.publicKey);
 
     sendto(
@@ -411,6 +463,13 @@ void startForwarding(int sockfd, int tun_fd)
                         continue;
                     }
 
+                    // Note: this direction never needed to inspect the IP
+                    // version before (IPv4 or IPv6) -- the client is already
+                    // identified by its real UDP source address/port above,
+                    // so the decrypted packet (whichever family it is) is
+                    // simply handed to the kernel via the TUN device, which
+                    // auto-detects v4 vs v6 from the packet itself in
+                    // IFF_NO_PI mode. No change needed here for IPv6.
                     vector<unsigned char> plaintext;
                     if (!decryptVpnPacket(
                             buffer,
@@ -444,28 +503,91 @@ void startForwarding(int sockfd, int tun_fd)
             {
                 cout << "\n[SERVER/TUN -> CLIENT]" << endl;
 
-                if (bytesRead < static_cast<int>(sizeof(iphdr)))
+                if (bytesRead < 1)
                 {
-                    cerr << "Short/malformed IPv4 packet from TUN; dropping packet." << endl;
+                    cerr << "Empty packet from TUN; dropping packet." << endl;
                     continue;
                 }
 
-                iphdr* ipHeader = reinterpret_cast<iphdr*>(buffer);
-                int ipHeaderLength = ipHeader->ihl * 4;
+                // This direction is the one place that has to tell IPv4 and
+                // IPv6 apart: the server multiplexes many clients over one
+                // TUN device, so it needs the packet's destination address
+                // to look up which client to encrypt-and-send it to. The
+                // top nibble of the first byte is the IP version for both
+                // families, so we branch on that before touching either
+                // header struct.
+                unsigned char ipVersion = static_cast<unsigned char>((buffer[0] >> 4) & 0x0F);
+                string destinationIP; // key into vpn_ip, resolved below for either family
 
-                if (ipHeader->version != 4 ||
-                    ipHeaderLength < static_cast<int>(sizeof(iphdr)) ||
-                    ipHeaderLength > bytesRead)
+                if (ipVersion == 4)
                 {
-                    cerr << "Malformed IPv4 packet from TUN; dropping packet." << endl;
-                    continue;
+                    // ---- Existing IPv4 path, unchanged ----
+                    if (bytesRead < static_cast<int>(sizeof(iphdr)))
+                    {
+                        cerr << "Short/malformed IPv4 packet from TUN; dropping packet." << endl;
+                        continue;
+                    }
+
+                    iphdr* ipHeader = reinterpret_cast<iphdr*>(buffer);
+                    int ipHeaderLength = ipHeader->ihl * 4;
+
+                    if (ipHeader->version != 4 ||
+                        ipHeaderLength < static_cast<int>(sizeof(iphdr)) ||
+                        ipHeaderLength > bytesRead)
+                    {
+                        cerr << "Malformed IPv4 packet from TUN; dropping packet." << endl;
+                        continue;
+                    }
+
+                    char destinationIPv4[INET_ADDRSTRLEN];
+                    if (inet_ntop(AF_INET, &ipHeader->daddr,
+                                  destinationIPv4, sizeof(destinationIPv4)) == nullptr)
+                    {
+                        cerr << "Could not determine TUN packet destination; dropping packet." << endl;
+                        continue;
+                    }
+
+                    destinationIP = destinationIPv4;
                 }
-
-                char destinationIP[INET_ADDRSTRLEN];
-                if (inet_ntop(AF_INET, &ipHeader->daddr,
-                              destinationIP, sizeof(destinationIP)) == nullptr)
+                else if (ipVersion == 6)
                 {
-                    cerr << "Could not determine TUN packet destination; dropping packet." << endl;
+                    // ---- New IPv6 path ----
+                    // TCP/UDP/ICMPv6 all live inside this same IPv6 payload;
+                    // we don't need to special-case them here because (just
+                    // like the IPv4 path) we only need the outer IPv6
+                    // header's destination address to pick a client -- the
+                    // whole packet, whatever transport protocol it carries,
+                    // is forwarded encrypted as-is.
+                    if (bytesRead < static_cast<int>(sizeof(ip6_hdr)))
+                    {
+                        cerr << "Short/malformed IPv6 packet from TUN; dropping packet." << endl;
+                        continue;
+                    }
+
+                    ip6_hdr* ip6Header = reinterpret_cast<ip6_hdr*>(buffer);
+
+                    char destinationIPv6[INET6_ADDRSTRLEN];
+                    if (inet_ntop(AF_INET6, &ip6Header->ip6_dst,
+                                  destinationIPv6, sizeof(destinationIPv6)) == nullptr)
+                    {
+                        cerr << "Could not determine IPv6 TUN packet destination; dropping packet." << endl;
+                        continue;
+                    }
+
+                    auto ipv6Entry = vpn_ipv6_to_ipv4.find(destinationIPv6);
+                    if (ipv6Entry == vpn_ipv6_to_ipv4.end())
+                    {
+                        cerr << "No registered client for VPN IPv6 "
+                             << destinationIPv6 << "; dropping packet." << endl;
+                        continue;
+                    }
+
+                    destinationIP = ipv6Entry->second; // the client's IPv4 key in vpn_ip
+                }
+                else
+                {
+                    cerr << "Unknown/unsupported IP version (" << (int)ipVersion
+                         << ") from TUN; dropping packet." << endl;
                     continue;
                 }
 

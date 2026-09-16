@@ -47,20 +47,20 @@ int main()
         wipeX25519PrivateKey(clientKeyPair);
         return 1;
     }
-    string vpn_ip = receiveHandshake(
+    VpnAssignedAddresses assignedAddresses = receiveHandshake(
         sockfd,
         clientKeyPair,
         sharedSecret,
         sessionKeys);
     wipeX25519PrivateKey(clientKeyPair);
-    if (vpn_ip.empty())
+    if (assignedAddresses.ipv4.empty())
     {
         cerr << "Failed to receive handshake or server is full." << endl;
         wipeX25519SharedSecret(sharedSecret);
         wipeSessionKeys(sessionKeys);
         return 1;
     }
-    int tun_fd = create_tun_interface(vpn_ip);
+    int tun_fd = create_tun_interface(assignedAddresses.ipv4, assignedAddresses.ipv6);
 
     if (tun_fd < 0)
     {
