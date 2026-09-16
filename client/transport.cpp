@@ -2,6 +2,7 @@
 #include "../crypto/packet_crypto.h"
 
 #include <iostream>
+#include <sstream>
 #include <vector>
 #include <unistd.h>
 #include <sys/socket.h>
@@ -53,7 +54,7 @@ void tunToServer(
     }
 }
 
-string receiveHandshake(
+VpnAssignedAddresses receiveHandshake(
     int sockfd,
     const X25519KeyPair& clientKeyPair,
     X25519SharedSecret& sharedSecret,
@@ -66,7 +67,7 @@ string receiveHandshake(
     if (bytesReceived < 0)
     {
         perror("Failed to receive handshake");
-        return "";
+        return {};
     }
 
     string message(buffer, bytesReceived);
@@ -74,26 +75,33 @@ string receiveHandshake(
     if (message == "VPN_FULL")
     {
         cout << "[CLIENT -> SERVER] Received handshake of " << bytesReceived << " bytes the server has reached its capacity" << endl;
-        return "";
+        return {};
     }
 
     const string prefix = "VPN_IP ";
     if (message.rfind(prefix, 0) == 0)
     {
-        size_t separator = message.find(' ', prefix.size());
-        if (separator == string::npos)
+        // Wire format is now "VPN_IP <ipv4> <ipv6> <server-pubkey-hex>".
+        // Tokenizing on whitespace instead of the old single find(' ')
+        // split lets us add the IPv6 field without disturbing anything
+        // else about the handshake.
+        istringstream fieldStream(message.substr(prefix.size()));
+        string vpnIPv4;
+        string vpnIPv6;
+        string serverPublicKeyText;
+
+        if (!(fieldStream >> vpnIPv4 >> vpnIPv6 >> serverPublicKeyText))
         {
             cerr << "Invalid server key-exchange response" << endl;
-            return "";
+            return {};
         }
 
-        string serverPublicKeyText = message.substr(separator + 1);
         X25519PublicKey serverPublicKey{};
 
         if (!decodeX25519PublicKey(serverPublicKeyText, serverPublicKey))
         {
             cerr << "Invalid server X25519 public key" << endl;
-            return "";
+            return {};
         }
 
         if (!deriveX25519SharedSecret(
@@ -102,25 +110,26 @@ string receiveHandshake(
                 serverPublicKey))
         {
             cerr << "Failed to derive the X25519 shared secret" << endl;
-            return "";
+            return {};
         }
 
         if (!deriveSessionKeys(sessionKeys, sharedSecret))
         {
             cerr << "Failed to derive session keys" << endl;
             wipeX25519SharedSecret(sharedSecret);
-            return "";
+            return {};
         }
 
         cout << "VPN IP received correctly!" << std::endl;
-        string vpnIP = message.substr(prefix.size(), separator - prefix.size());
-        cout << "Assigned VPN IP: " << vpnIP << endl;
+        cout << "Assigned VPN IPv4: " << vpnIPv4 << endl;
+        cout << "Assigned VPN IPv6: " << vpnIPv6 << endl;
         cout << "X25519 key agreement completed. Shared-secret fingerprint: "
              << sharedSecretFingerprint(sharedSecret) << endl;
-        return vpnIP;
+
+        return VpnAssignedAddresses{vpnIPv4, vpnIPv6};
 
     } 
-    return "";
+    return {};
 }
 
 int sendHandshake(

@@ -6,12 +6,22 @@
 #include "../crypto/handshake.h"
 #include "../crypto/session_keys.h"
 using namespace std;
+
+// Holds the VPN addresses the server assigns to this client during the
+// handshake. IPv4 is unchanged from before; IPv6 is new. If the handshake
+// fails, both fields are left empty (see receiveHandshake()).
+struct VpnAssignedAddresses
+{
+    string ipv4;
+    string ipv6;
+};
+
 void tunToServer(
     int tun_fd,
     int sockfd,
     sockaddr_in serverAddress,
     const SessionKeys& sessionKeys);
-string receiveHandshake(
+VpnAssignedAddresses receiveHandshake(
     int sockfd,
     const X25519KeyPair& clientKeyPair,
     X25519SharedSecret& sharedSecret,
