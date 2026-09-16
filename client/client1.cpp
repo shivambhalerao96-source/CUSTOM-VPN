@@ -10,7 +10,7 @@
 
 using namespace std;
 
-int main()
+int main(int argc, char* argv[])
 {
     if (!initializeCrypto())
     {
@@ -32,8 +32,13 @@ int main()
     serverAddress.sin_family = AF_INET;
     serverAddress.sin_port = htons(8080);
 
-    // using ui ux accept which server we want to use
-    inet_pton(AF_INET, "34.145.231.1", &serverAddress.sin_addr);
+    const char* serverIp = argc > 1 ? argv[1] : "34.145.231.1";
+    if (inet_pton(AF_INET, serverIp, &serverAddress.sin_addr) != 1)
+    {
+        cerr << "Invalid VPN server IPv4 address: " << serverIp << endl;
+        close(sockfd);
+        return 1;
+    }
 
     // getting the vpn ip from the server and creating the tun interface with that ip
     cout << "Sending handshake to server..." << endl;
