@@ -32,7 +32,13 @@ int main(int argc, char* argv[])
     serverAddress.sin_family = AF_INET;
     serverAddress.sin_port = htons(8080);
 
-    const char* serverIp = argc > 1 ? argv[1] : "34.145.231.1";
+    const char* serverIp = argc > 1 ? argv[1] : "";
+    if( serverIp[0] == '\0') {
+        cerr << "Please provide the VPN server IPv4 address as a command-line argument." << endl;
+        close(sockfd);
+        return 1;
+    }
+    cout << "Connecting to VPN server at " << serverIp << ":8080..." << endl;
     if (inet_pton(AF_INET, serverIp, &serverAddress.sin_addr) != 1)
     {
         cerr << "Invalid VPN server IPv4 address: " << serverIp << endl;
@@ -65,7 +71,7 @@ int main(int argc, char* argv[])
         wipeSessionKeys(sessionKeys);
         return 1;
     }
-    int tun_fd = create_tun_interface(assignedAddresses.ipv4, assignedAddresses.ipv6);
+    int tun_fd = create_tun_interface(assignedAddresses.ipv4, assignedAddresses.ipv6, serverIp);
 
     if (tun_fd < 0)
     {

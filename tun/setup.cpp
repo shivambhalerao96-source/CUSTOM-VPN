@@ -52,7 +52,7 @@ string get_router_ip() {
     return result;
 }
 
-void reroute(){
+void reroute(const char * vpn_server_ip) {
 
     string router= get_router_ip();// gets the router ip address
 
@@ -66,7 +66,7 @@ void reroute(){
     // formulates the command to be executed
 
     // make ip packets with destination vpn server go through the wifi 
-    string cmd= string("sudo ip route add 34.145.231.1 via ")+ router+ " dev wlo1";
+    string cmd= string("sudo ip route add ")+ vpn_server_ip + string(" via ")+ router+ " dev wlo1";
     system(cmd.c_str());
     // make ip packets with destination other than vpn server go through tun0
     int status = system("sudo ip route add default dev tun0 metric 50");
@@ -116,7 +116,7 @@ int assign_ipv6_address(const string & vpn_ipv6){
 //     return 0;
 // }
 
-int create_tun_interface(const string & vpn_ipv4, const string & vpn_ipv6) {
+int create_tun_interface(const string & vpn_ipv4, const string & vpn_ipv6, const string & vpn_server_ip) {
 
     
 
@@ -153,6 +153,6 @@ if (!vpn_ipv6.empty() && assign_ipv6_address(vpn_ipv6) != 0) {
 }
 
 up();
-reroute();
+reroute(vpn_server_ip.c_str());
 return fd;
 }

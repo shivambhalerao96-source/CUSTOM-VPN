@@ -10,6 +10,7 @@
 #include <QProcess>
 #include <QPushButton>
 #include <QTimer>
+#include <QVBoxLayout>
 #include <QWidget>
 
 #include <arpa/inet.h>
@@ -106,8 +107,14 @@ int main(int argc, char *argv[])
     auto* controls = new QGroupBox("Connection");
     auto* controlsLayout = new QHBoxLayout(controls);
     auto* server = new QComboBox;
-    server->addItem("Singapore VPN  •  34.145.231.1", "34.145.231.1");
+    server->addItem("USA VPN  •  34.145.231.1", "34.145.231.1");
+    server->addItem("Europe VPN  •  8.228.37.190", "8.228.37.190");
     server->addItem("Local development  •  127.0.0.1", "127.0.0.1");
+    QString selectedServerIp = server->currentData().toString();
+    QObject::connect(server, &QComboBox::currentIndexChanged, &window,
+                     [&selectedServerIp, server](int index) {
+        selectedServerIp = server->itemData(index).toString();
+    });
     controlsLayout->addWidget(server, 1);
     auto* runButton = new QPushButton("Run VPN");
     runButton->setObjectName("run");
@@ -136,7 +143,7 @@ int main(int argc, char *argv[])
 
     auto* client = new QProcess(&window);
     client->setProgram(QCoreApplication::applicationDirPath() + "/vpn_client");
-    client->setWorkingDirectory(QCoreApplication::applicationDirPath());
+    // client->setWorkingDirectory(QCoreApplication::applicationDirPath());
     auto* geoLookup = new QProcess(&window);
     location->setText("Geographic location\nLooking up...");
     geoLookup->start("curl", {"--silent", "--max-time", "5", "https://ipapi.co/json/"});
@@ -163,10 +170,10 @@ int main(int argc, char *argv[])
     });
     refreshMetrics->start();
 
-    QObject::connect(runButton, &QPushButton::clicked, &window, [=]() {
+    QObject::connect(runButton, &QPushButton::clicked, &window, [=, &selectedServerIp]() {
         if (client->state() != QProcess::NotRunning)
             return;
-        client->start(client->program(), {server->currentData().toString()});
+        client->start(client->program(), {selectedServerIp});
         status->setText("VPN status\nConnecting...");
         runButton->setEnabled(false);
         server->setEnabled(false);
