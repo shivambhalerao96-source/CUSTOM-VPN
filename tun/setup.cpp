@@ -51,9 +51,38 @@ string get_router_ip() {
     return result;
 }
 
+static string detect_external_iface() {
+
+    string command =
+        "ip route show default | awk '{for(i=1;i<=NF;i++) if ($i==\"dev\") {print $(i+1); exit}}'";
+
+    FILE* pipe = popen(command.c_str(), "r");
+    if (pipe == nullptr) {
+        return "";
+    }
+
+    char buffer[128];
+    string iface;
+
+    while (fgets(buffer, sizeof(buffer), pipe) != nullptr) {
+        iface += buffer;
+    }
+
+    pclose(pipe);
+
+    while (!iface.empty() &&
+           (iface.back() == '\n' || iface.back() == '\r' ||
+            iface.back() == ' ' || iface.back() == '\t')) {
+        iface.pop_back();
+    }
+
+    return iface;
+}
+
 void reroute(){
 
     string router= get_router_ip();// gets the router ip address
+    string iface = detect_external_iface();
 
    
 
@@ -64,8 +93,14 @@ void reroute(){
 
     // formulates the command to be executed
 
-    // make ip packets with destination vpn server go through the wifi 
-    string cmd= string("sudo ip route add 34.145.231.1 via ")+ router+ " dev wlo1";
+    if (iface.empty()) {
+        cerr << "Failed to detect default network interface." << endl;
+        return;
+    }
+
+    // make ip packets with destination vpn server go through the physical interface
+    string cmd = string("sudo ip route add 8.228.37.190 via ") + router +
+                 " dev " + iface;
     system(cmd.c_str());
     // make ip packets with destination other than vpn server go through tun0
     int status = system("sudo ip route add default dev tun0 metric 50");
