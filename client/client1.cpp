@@ -32,7 +32,7 @@ int main()
     serverAddress.sin_family = AF_INET;
     serverAddress.sin_port = htons(8080);
 
-    inet_pton(AF_INET, "34.145.231.1", &serverAddress.sin_addr);
+    inet_pton(AF_INET, "8.228.37.190 ", &serverAddress.sin_addr);
 
     // getting the vpn ip from the server and creating the tun interface with that ip
     cout << "Sending handshake to server..." << endl;
