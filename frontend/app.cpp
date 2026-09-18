@@ -19,6 +19,7 @@
 #include <cstdio>
 #include <fstream>
 #include <sstream>
+#include <"disconnect.h">
 
 namespace
 {
@@ -141,34 +142,34 @@ int main(int argc, char *argv[])
     root->addWidget(dashboard);
     root->addStretch();
 
+    auto* refreshMetrics = new QTimer(&window);
+    QObject::connect(refreshMetrics, &QTimer::timeout, &window, [=]() {
+        const auto bytes = interfaceBytes();
+        speed->setText(QStringLiteral("Internet speed\n%1 KiB/s").arg(bytes / 1024));
+        ipv4->setText(QStringLiteral("IPv4 address\n%1").arg(localIpv4Address()));
+    });
+
     auto* client = new QProcess(&window);
     client->setProgram(QCoreApplication::applicationDirPath() + "/vpn_client");
     // client->setWorkingDirectory(QCoreApplication::applicationDirPath());
-    auto* geoLookup = new QProcess(&window);
-    location->setText("Geographic location\nLooking up...");
-    geoLookup->start("curl", {"--silent", "--max-time", "5", "https://ipapi.co/json/"});
-    QObject::connect(geoLookup, &QProcess::finished, &window,
-                     [=](int, QProcess::ExitStatus) {
-        const QJsonObject data = QJsonDocument::fromJson(geoLookup->readAllStandardOutput())
-                                     .object();
-        const QString city = data.value("city").toString();
-        const QString country = data.value("country_name").toString();
-        const QString place = city.isEmpty() || country.isEmpty()
-            ? QStringLiteral("Unavailable")
-            : city + ", " + country;
-        location->setText("Geographic location\n" + place);
-    });
-    auto refreshMetrics = new QTimer(&window);
-    quint64 previousBytes = interfaceBytes();
-    refreshMetrics->setInterval(1000);
-    QObject::connect(refreshMetrics, &QTimer::timeout, &window, [=, &previousBytes]() mutable {
-        const quint64 currentBytes = interfaceBytes();
-        const double megabits = (currentBytes - previousBytes) * 8.0 / 1000000.0;
-        previousBytes = currentBytes;
-        speed->setText(QStringLiteral("Internet speed\n%1 Mbps").arg(megabits, 0, 'f', 2));
-        ipv4->setText("IPv4 address\n" + localIpv4Address());
-    });
-    refreshMetrics->start();
+    // auto* geoLookup = new QProcess(&window);
+    // location->setText("Geographic location\nLooking up...");
+    // geoLookup->start("curl", {"--silent", "--max-time", "5", "https://ipapi.co/json/"});
+    // QObject::connect(geoLookup, &QProcess::finished, &window,
+    //                  [=](int, QProcess::ExitStatus) {
+    //     const QJsonObject data = QJsonDocument::fromJson(geoLookup->readAllStandardOutput())
+    //                                  .object();
+    //     const QString city = data.value("city").toString();
+    //     const QString country = data.value("country_name").toString();
+    //     const QString place = city.isEmpty() || country.isEmpty()
+    //         ? QStringLiteral("Unavailable")
+    //         : city + ", " + country;
+    //     location->setText("Not implemented yet");
+    // });
+    location->setText("Location Not implemented yet");
+    speed->setText(QStringLiteral("Internet speed\n--"));
+    ipv4->setText(QStringLiteral("IPv4 address\n%1").arg(localIpv4Address()));
+    //refreshMetrics->start(1000);
 
     QObject::connect(runButton, &QPushButton::clicked, &window, [=, &selectedServerIp]() {
         if (client->state() != QProcess::NotRunning)
