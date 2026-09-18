@@ -5,6 +5,7 @@
 #include <string>
 #include "../crypto/handshake.h"
 #include "../crypto/session_keys.h"
+#include "../crypto/replay_protection.h"
 using namespace std;
 
 // Holds the VPN addresses the server assigns to this client during the
@@ -20,7 +21,8 @@ void tunToServer(
     int tun_fd,
     int sockfd,
     sockaddr_in serverAddress,
-    const SessionKeys& sessionKeys);
+    const SessionKeys& sessionKeys,
+    SequenceNumberSender& sendSequence);
 VpnAssignedAddresses receiveHandshake(
     int sockfd,
     const X25519KeyPair& clientKeyPair,
@@ -34,6 +36,7 @@ int sendHandshake(
 void serverToTun(
     int tun_fd,
     int sockfd,
-    const SessionKeys& sessionKeys);
+    const SessionKeys& sessionKeys,
+    ReplayWindow& receiveWindow);
 
 #endif
