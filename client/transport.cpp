@@ -13,7 +13,8 @@ void tunToServer(
     int tun_fd,
     int sockfd,
     sockaddr_in serverAddress,
-    const SessionKeys& sessionKeys)
+    const SessionKeys& sessionKeys,
+    SequenceNumberSender& sendSequence)
 {
     unsigned char buffer[65535];
 
@@ -26,8 +27,16 @@ void tunToServer(
             continue;
         }
 
+        uint64_t sequence = 0;
+        if (!sendSequence.nextSequence(sequence))
+        {
+            cerr << "Client-to-server sequence space exhausted; dropping packet" << endl;
+            continue;
+        }
+
         vector<unsigned char> encryptedPacket;
-        if (!encryptVpnPacket(
+        if (!encryptSequencedVpnPacket(
+                sequence,
                 buffer,
                 static_cast<size_t>(bytesRead),
                 sessionKeys.clientToServer,
@@ -165,7 +174,8 @@ int sendHandshake(
 void serverToTun(
     int tun_fd,
     int sockfd,
-    const SessionKeys& sessionKeys)
+    const SessionKeys& sessionKeys,
+    ReplayWindow& receiveWindow)
 {
     unsigned char buffer[kMaxVpnTunPacketBytes];
 
@@ -179,13 +189,21 @@ void serverToTun(
         }
 
         vector<unsigned char> plaintext;
-        if (!decryptVpnPacket(
+        uint64_t sequence = 0;
+        if (!decryptSequencedVpnPacket(
                 buffer,
                 static_cast<size_t>(bytesReceived),
                 sessionKeys.serverToClient,
+                sequence,
                 plaintext))
         {
             cerr << "Server-to-client packet authentication failed; dropping packet" << endl;
+            continue;
+        }
+
+        if (!receiveWindow.accept(sequence))
+        {
+            cerr << "Server-to-client replay detected; dropping packet" << endl;
             continue;
         }
 

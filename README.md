@@ -55,9 +55,31 @@ The client derives and retains its `SessionKeys` for the VPN session. The server
 
 Session-key material is wiped with Libsodium's `sodium_memzero()` when it is no longer needed.
 
+### Layer 3: Packet encryption
+
+Layer 3 encrypts each VPN packet with Libsodium's
+`crypto_aead_xchacha20poly1305_ietf` API. The packet format is
+`[nonce][ciphertext + authentication tag]`, with a fresh random nonce for
+each packet. The C2S and S2C operations use the corresponding Layer 2
+directional session key.
+
+### Layer 4: Integrity and authentication
+
+Layer 4 uses the Poly1305 authentication component already included in the
+Layer 3 XChaCha20-Poly1305 AEAD operation. The receiver verifies the tag as
+part of decryption and drops failures before writing anything to TUN. A
+second independent Poly1305 pass is intentionally not added.
+
+The Layer 3 and Layer 4 implementation details are documented in:
+
+- `docs/layer3/README.md`
+- `docs/layer4/README.md`
+
 ## Current scope
 
-Layer 2 does not yet encrypt VPN packets. The existing packet format and raw UDP/TUN forwarding remain unchanged. Packet encryption, nonces, authentication, replay protection, and key rotation belong to later layers.
+Layers 1 through 4 are implemented locally. Replay protection and packet
+sequence numbers remain deferred to Layer 5. Key rotation is also not
+implemented.
 
 The current handshake is unauthenticated, so X25519 key agreement alone does not provide protection against a man-in-the-middle attack.
 

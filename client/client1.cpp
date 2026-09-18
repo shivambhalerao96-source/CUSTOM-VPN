@@ -71,14 +71,22 @@ int main()
 
     cout << "TUN interface created successfully." << endl;
 
-    
+    SequenceNumberSender clientToServerSequence;
+    ReplayWindow serverToClientReplay;
+
     thread sender(
         tunToServer,
         tun_fd,
         sockfd,
         serverAddress,
-        cref(sessionKeys));
-    thread receiver(serverToTun, tun_fd, sockfd, cref(sessionKeys));
+        cref(sessionKeys),
+        ref(clientToServerSequence));
+    thread receiver(
+        serverToTun,
+        tun_fd,
+        sockfd,
+        cref(sessionKeys),
+        ref(serverToClientReplay));
 
     sender.join();
     receiver.join();

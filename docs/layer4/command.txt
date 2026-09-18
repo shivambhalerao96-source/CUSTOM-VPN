@@ -1,0 +1,5 @@
+CLient:
+g++ client/client1.cpp client/transport.cpp crypto/handshake.cpp crypto/session_keys.cpp crypto/packet_crypto.cpp tun/setup.cpp -lsodium -pthread -o client_app
+
+Server:
+g++ server/server.cpp server/forward.cpp crypto/handshake.cpp crypto/session_keys.cpp crypto/packet_crypto.cpp tun/setup.cpp -lsodium -pthread -o server_app

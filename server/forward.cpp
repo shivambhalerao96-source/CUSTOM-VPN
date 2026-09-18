@@ -2,6 +2,7 @@
 #include "../crypto/handshake.h"
 #include "../crypto/packet_crypto.h"
 #include "../crypto/session_keys.h"
+#include "../crypto/replay_protection.h"
 #include <iostream>
 #include <sys/socket.h>
 #include <arpa/inet.h>
@@ -26,6 +27,8 @@ struct ClientInfo {
     string vpnIPv6;
     X25519SharedSecret sharedSecret;
     SessionKeys sessionKeys;
+    SequenceNumberSender serverToClientSequence;
+    ReplayWindow clientToServerReplay;
 
     ~ClientInfo()
     {
@@ -471,13 +474,21 @@ void startForwarding(int sockfd, int tun_fd)
                     // auto-detects v4 vs v6 from the packet itself in
                     // IFF_NO_PI mode. No change needed here for IPv6.
                     vector<unsigned char> plaintext;
-                    if (!decryptVpnPacket(
+                    uint64_t sequence = 0;
+                    if (!decryptSequencedVpnPacket(
                             buffer,
                             static_cast<size_t>(bytesReceived),
                             client->second.sessionKeys.clientToServer,
+                            sequence,
                             plaintext))
                     {
                         cerr << "Client-to-server packet authentication failed; dropping packet" << endl;
+                        continue;
+                    }
+
+                    if (!client->second.clientToServerReplay.accept(sequence))
+                    {
+                        cerr << "Client-to-server replay detected; dropping packet" << endl;
                         continue;
                     }
 
@@ -599,8 +610,16 @@ void startForwarding(int sockfd, int tun_fd)
                     continue;
                 }
 
+                uint64_t sequence = 0;
+                if (!client->second.serverToClientSequence.nextSequence(sequence))
+                {
+                    cerr << "Server-to-client sequence space exhausted; dropping packet" << endl;
+                    continue;
+                }
+
                 vector<unsigned char> encryptedPacket;
-                if (!encryptVpnPacket(
+                if (!encryptSequencedVpnPacket(
+                        sequence,
                         buffer,
                         static_cast<size_t>(bytesRead),
                         client->second.sessionKeys.serverToClient,
