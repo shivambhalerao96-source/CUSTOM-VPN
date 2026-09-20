@@ -6,6 +6,7 @@
 #include <vector>
 #include <unistd.h>
 #include <sys/socket.h>
+#include <sys/select.h>
 #include <arpa/inet.h>
 
 using namespace std;
@@ -70,7 +71,25 @@ VpnAssignedAddresses receiveHandshake(
     SessionKeys& sessionKeys)
 {
     char buffer[65535];
-    //socklen_t clientLength = sizeof(clientAddress);
+
+    fd_set readfds;
+    FD_ZERO(&readfds);
+    FD_SET(sockfd, &readfds);
+
+    timeval timeout{};
+    timeout.tv_sec = 10;
+
+    int ready = select(sockfd + 1, &readfds, nullptr, nullptr, &timeout);
+    if (ready < 0)
+    {
+        perror("Failed while waiting for handshake response");
+        return {};
+    }
+    if (ready == 0)
+    {
+        cerr << "Timed out waiting for the VPN server handshake response" << endl;
+        return {};
+    }
 
     int bytesReceived = recvfrom(sockfd,buffer, sizeof(buffer), 0,nullptr,nullptr);
     if (bytesReceived < 0)

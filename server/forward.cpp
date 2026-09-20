@@ -270,25 +270,23 @@ bool handleHandshake(int sockfd, const char* buffer, int bytesReceived, sockaddr
         return true;
     }
 
-    // Check whether this client already exists
-    for (auto& [vpnIP, client] : vpn_ip)
-    {
-        if (client.address.sin_addr.s_addr ==
-                clientAddress.sin_addr.s_addr &&
-            client.address.sin_port ==
-                clientAddress.sin_port)
+    // Find an existing session for this UDP endpoint. A restarted client can
+    // reuse the same source port, but it has a new ephemeral X25519 key pair.
+    // Keep its VPN address while completing a fresh key exchange below.
+    auto existingClient = find_if(
+        vpn_ip.begin(),
+        vpn_ip.end(),
+        [&](const auto& entry)
         {
-            cout << "Client already registered as "
-                 << vpnIP << endl;
+            return entry.second.address.sin_addr.s_addr ==
+                       clientAddress.sin_addr.s_addr &&
+                   entry.second.address.sin_port == clientAddress.sin_port;
+        });
 
-            //string response = "VPN_IP " + vpnIP;
-
-            return true;
-        }
-    }
-
-    // Allocate a new VPN IP
-    string vpnIP = allocateVPNIP();
+    // Allocate a new VPN IP only for a new UDP endpoint.
+    string vpnIP = existingClient == vpn_ip.end()
+                       ? allocateVPNIP()
+                       : existingClient->first;
 
     if (vpnIP.empty())
     {
@@ -350,7 +348,20 @@ bool handleHandshake(int sockfd, const char* buffer, int bytesReceived, sockaddr
         return true;
     }
 
-    vpn_ip.emplace(vpnIP, client);
+    if (existingClient == vpn_ip.end())
+    {
+        vpn_ip.emplace(vpnIP, client);
+    }
+    else
+    {
+        // Do not let assignment discard the old secret without wiping it.
+        // Replacing the complete record also resets sequence/replay state for
+        // the newly negotiated session.
+        wipeX25519SharedSecret(existingClient->second.sharedSecret);
+        wipeSessionKeys(existingClient->second.sessionKeys);
+        existingClient->second = client;
+        cout << "VPN client session refreshed for " << vpnIP << endl;
+    }
     if (!vpnIPv6.empty())
         vpn_ipv6_to_ipv4[vpnIPv6] = vpnIP;
 
