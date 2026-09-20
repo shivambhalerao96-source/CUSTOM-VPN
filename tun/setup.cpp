@@ -41,7 +41,7 @@ string get_router_ip() {
     // cout<<"outside llop"<<endl;
     // cout<<"result="<<result<<endl;
 
-    int status = pclose(pipe);
+     pclose(pipe);
 
     // Remove trailing newline
     while (!result.empty() &&
