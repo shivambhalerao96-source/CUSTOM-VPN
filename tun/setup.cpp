@@ -99,7 +99,7 @@ void reroute(){
     }
 
     // make ip packets with destination vpn server go through the physical interface
-    string cmd = string("sudo ip route add 8.228.37.190 via ") + router +
+    string cmd = string("sudo ip route add 35.226.148.101 via ") + router +
                  " dev " + iface;
     system(cmd.c_str());
     // make ip packets with destination other than vpn server go through tun0
