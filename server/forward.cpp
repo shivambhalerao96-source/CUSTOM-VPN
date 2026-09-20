@@ -497,6 +497,8 @@ void startForwarding(int sockfd, int tun_fd)
                         continue;
                     }
 
+                    cout << "Client-to-server sequence number: " << sequence << endl;
+
                     if (!client->second.clientToServerReplay.accept(sequence))
                     {
                         cerr << "Client-to-server replay detected; dropping packet" << endl;
@@ -639,6 +641,8 @@ void startForwarding(int sockfd, int tun_fd)
                     cerr << "Failed to encrypt server-to-client packet; dropping packet" << endl;
                     continue;
                 }
+
+                cout << "Server-to-client sequence number: " << sequence << endl;
 
                 ssize_t bytesSent = sendto(
                     sockfd,
