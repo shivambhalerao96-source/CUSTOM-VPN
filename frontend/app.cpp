@@ -2,11 +2,14 @@
 #include <QComboBox>
 #include <QCoreApplication>
 #include <QGridLayout>
+#include <QGraphicsDropShadowEffect>
+#include <QGraphicsOpacityEffect>
 #include <QGroupBox>
 #include <QHBoxLayout>
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QLabel>
+#include <QPropertyAnimation>
 #include <QProcess>
 #include <QPushButton>
 #include <QTimer>
@@ -19,7 +22,6 @@
 #include <cstdio>
 #include <fstream>
 #include <sstream>
-#include <"disconnect.h">
 
 namespace
 {
@@ -72,6 +74,7 @@ quint64 interfaceBytes()
     }
     return total;
 }
+
 }
 
 int main(int argc, char *argv[])
@@ -81,23 +84,38 @@ int main(int argc, char *argv[])
     QWidget window;
 
     window.setWindowTitle("Custom VPN");
-    window.resize(760, 500);
+    window.resize(820, 560);
     window.setStyleSheet(R"(
-        QWidget { background: #101820; color: #f2f5f7; font-family: "DejaVu Sans"; }
-        QLabel#title { font-size: 28px; font-weight: 700; color: #ffffff; }
-        QLabel#subtitle { color: #8fa4b3; font-size: 13px; }
-        QGroupBox { border: 1px solid #263744; border-radius: 8px; margin-top: 12px; padding: 14px; }
-        QGroupBox::title { subcontrol-origin: margin; left: 12px; padding: 0 5px; color: #8fa4b3; }
-        QLabel.metric { background: #182630; border: 1px solid #263744; border-radius: 8px; padding: 16px; }
-        QLabel.metricValue { color: #62d6b5; font-size: 20px; font-weight: 700; }
-        QComboBox { background: #182630; border: 1px solid #385160; border-radius: 5px; padding: 9px; }
-        QPushButton { border: 0; border-radius: 5px; padding: 10px 18px; font-weight: 700; }
-        QPushButton#run { background: #62d6b5; color: #10201d; }
-        QPushButton#close { background: #263744; color: #f2f5f7; }
-        QPushButton:disabled { background: #263744; color: #6e818d; }
+        QWidget { background: #050505; color: #f5eeee; font-family: "DejaVu Sans"; }
+        QLabel#eyebrow { color: #e05252; font-size: 11px; font-weight: 700; letter-spacing: 2px; }
+        QLabel#title { font-size: 32px; font-weight: 700; color: #ffffff; }
+        QLabel#subtitle { color: #aa9292; font-size: 13px; }
+        QGroupBox { background: #120909; border: 1px solid #442020; border-radius: 14px; margin-top: 14px; padding: 18px; }
+        QGroupBox::title { subcontrol-origin: margin; left: 16px; padding: 0 7px; color: #c7a4a4; font-size: 12px; font-weight: 700; }
+        QLabel[class="metric"] { background: #180b0b; border: 1px solid #4a2424; border-radius: 12px; padding: 16px; color: #c7a4a4; font-size: 12px; }
+        QLabel[class="metric"]:hover { background: #2a1010; border-color: #d94b4b; color: #f5eeee; }
+        QComboBox { background: #180b0b; border: 1px solid #633030; border-radius: 10px; padding: 11px 14px; min-height: 20px; color: #f5eeee; }
+        QComboBox:hover { border-color: #d94b4b; }
+        QComboBox:focus { border: 2px solid #e05252; padding: 10px 13px; }
+        QComboBox::drop-down { border: 0; width: 28px; }
+        QComboBox QAbstractItemView { background: #180b0b; border: 1px solid #633030; selection-background-color: #642424; padding: 5px; }
+        QPushButton { border: 0; border-radius: 10px; padding: 11px 20px; min-width: 105px; font-weight: 700; }
+        QPushButton#run { background: #c93434; color: #ffffff; }
+        QPushButton#run:hover { background: #e05252; padding: 12px 21px; }
+        QPushButton#run:focus { border: 2px solid #f5eeee; }
+        QPushButton#run:pressed { background: #982525; padding-top: 13px; padding-bottom: 9px; }
+        QPushButton#close { background: #442020; color: #f5eeee; }
+        QPushButton#close:hover { background: #6b2b2b; padding: 12px 21px; }
+        QPushButton#close:focus { border: 2px solid #e05252; }
+        QPushButton#close:pressed { background: #2b1414; padding-top: 13px; padding-bottom: 9px; }
     )");
 
     auto* root = new QVBoxLayout(&window);
+    root->setContentsMargins(28, 24, 28, 28);
+    root->setSpacing(8);
+    auto* eyebrow = new QLabel("PRIVATE NETWORK / CONTROL CENTER");
+    eyebrow->setObjectName("eyebrow");
+    root->addWidget(eyebrow);
     auto* title = new QLabel("Custom VPN");
     title->setObjectName("title");
     root->addWidget(title);
@@ -119,8 +137,10 @@ int main(int argc, char *argv[])
     controlsLayout->addWidget(server, 1);
     auto* runButton = new QPushButton("Run VPN");
     runButton->setObjectName("run");
-    auto* closeButton = new QPushButton("Close");
+    auto* closeButton = new QPushButton("Disconnect");
     closeButton->setObjectName("close");
+    runButton->setToolTip("Start the VPN connection");
+    closeButton->setToolTip("Disconnect from the VPN server");
     controlsLayout->addWidget(runButton);
     controlsLayout->addWidget(closeButton);
     root->addWidget(controls);
@@ -141,6 +161,26 @@ int main(int argc, char *argv[])
     auto* status = addMetric("VPN status", 1, 1);
     root->addWidget(dashboard);
     root->addStretch();
+
+    auto addShadow = [](QWidget* widget, const QColor& color, int blurRadius) {
+        auto* shadow = new QGraphicsDropShadowEffect(widget);
+        shadow->setBlurRadius(blurRadius);
+        shadow->setOffset(0, 8);
+        shadow->setColor(color);
+        widget->setGraphicsEffect(shadow);
+    };
+    addShadow(controls, QColor(0, 0, 0, 70), 22);
+    addShadow(runButton, QColor(98, 214, 181, 65), 18);
+
+    auto* dashboardOpacity = new QGraphicsOpacityEffect(dashboard);
+    dashboardOpacity->setOpacity(0.0);
+    dashboard->setGraphicsEffect(dashboardOpacity);
+    auto* dashboardIntro = new QPropertyAnimation(dashboardOpacity, "opacity", &window);
+    dashboardIntro->setDuration(650);
+    dashboardIntro->setStartValue(0.0);
+    dashboardIntro->setEndValue(1.0);
+    dashboardIntro->setEasingCurve(QEasingCurve::OutCubic);
+    dashboardIntro->start(QAbstractAnimation::DeleteWhenStopped);
 
     auto* refreshMetrics = new QTimer(&window);
     QObject::connect(refreshMetrics, &QTimer::timeout, &window, [=]() {
@@ -176,7 +216,6 @@ int main(int argc, char *argv[])
             return;
         client->start(client->program(), {selectedServerIp});
         status->setText("VPN status\nConnecting...");
-        runButton->setEnabled(false);
         server->setEnabled(false);
     });
     QObject::connect(client, &QProcess::started, &window, [=]() {
@@ -184,13 +223,15 @@ int main(int argc, char *argv[])
     });
     QObject::connect(client, &QProcess::finished, &window, [=](int, QProcess::ExitStatus) {
         status->setText("VPN status\nDisconnected");
-        runButton->setEnabled(true);
         server->setEnabled(true);
     });
     QObject::connect(closeButton, &QPushButton::clicked, &window, [&]() {
         if (client->state() != QProcess::NotRunning)
-            client->terminate();
-        window.close();
+        {
+            status->setText("VPN status\nDisconnecting...");
+            client->write("disconnect\n");
+            client->closeWriteChannel();
+        }
     });
 
     window.show();

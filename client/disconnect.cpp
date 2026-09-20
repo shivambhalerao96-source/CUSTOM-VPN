@@ -9,13 +9,13 @@
 #include <arpa/inet.h>
 #include "disconnect.h"
 #include <cstring>
-#include <setup.h>
+#include "../tun/setup.h"
 
 using namespace std;
 void sendDisconnectMessage(int sockfd, sockaddr_in serverAddress,
     const SessionKeys& sessionKeys)
 {
-    const unsigned char* disconnectMessage = "VPN_DISCONNECT";
+    const unsigned char disconnectMessage[] = "VPN_DISCONNECT";
     // ssize_t bytesSent = send(sockfd, disconnectMessage, strlen(disconnectMessage), 0);
     // if (bytesSent < 0)
     // {
@@ -30,7 +30,7 @@ void sendDisconnectMessage(int sockfd, sockaddr_in serverAddress,
     vector<unsigned char> encryptedPacket;
         if (!encryptVpnPacket(
                 disconnectMessage,
-                sizeof(disconnectMessage) - 1,  // Exclude null terminator
+                strlen(reinterpret_cast<const char*>(disconnectMessage)),
                 sessionKeys.clientToServer,
                 encryptedPacket))
         {
@@ -61,7 +61,13 @@ void sendDisconnectMessage(int sockfd, sockaddr_in serverAddress,
        
         unsigned char buffer[65535];
          while(1){
-        int bytesReceived = recv(sockfd, buffer, sizeof(buffer), 0);
+        int bytesReceived = recvfrom(
+            sockfd,
+            buffer,
+            sizeof(buffer),
+            0,
+            nullptr,
+            nullptr);
         if (bytesReceived < 0)
         {
             perror("Failed to receive packet");

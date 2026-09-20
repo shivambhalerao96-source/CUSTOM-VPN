@@ -1,4 +1,5 @@
 #include <iostream>
+#include <atomic>
 #include <thread>
 #include <functional>
 #include <sys/socket.h>
@@ -83,17 +84,37 @@ int main(int argc, char* argv[])
 
     cout << "TUN interface created successfully." << endl;
 
-    
+    atomic<bool> stopRequested{false};
+
     thread sender(
         tunToServer,
         tun_fd,
         sockfd,
         serverAddress,
-        cref(sessionKeys));
-    thread receiver(serverToTun, tun_fd, sockfd, cref(sessionKeys));
+        cref(sessionKeys),
+        ref(stopRequested));
+    thread receiver(
+        serverToTun,
+        tun_fd,
+        sockfd,
+        cref(sessionKeys),
+        ref(stopRequested));
+
+    thread control([&]() {
+        string command;
+        if (getline(cin, command) && command == "disconnect")
+        {
+            sendDisconnectMessage(sockfd, serverAddress, sessionKeys);
+            stopRequested.store(true);
+            shutdown(sockfd, SHUT_RDWR);
+            close(sockfd);
+            close(tun_fd);
+        }
+    });
 
     sender.join();
     receiver.join();
+    control.join();
 
     wipeX25519SharedSecret(sharedSecret);
     wipeSessionKeys(sessionKeys);

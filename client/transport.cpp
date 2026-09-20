@@ -1,6 +1,7 @@
 #include "transport.h"
 #include "../crypto/packet_crypto.h"
-
+#include "../tun/setup.h"
+#include <cstring>
 #include <iostream>
 #include <sstream>
 #include <vector>
@@ -13,16 +14,21 @@ void tunToServer(
     int tun_fd,
     int sockfd,
     sockaddr_in serverAddress,
-    const SessionKeys& sessionKeys)
+    const SessionKeys& sessionKeys,
+    atomic<bool>& stopRequested)
 {
     unsigned char buffer[65535];
 
-    while (true)
+    while (!stopRequested.load())
     {
         int bytesRead = read(tun_fd, buffer, sizeof(buffer));
 
         if (bytesRead < 0)
-        { perror("Error reading packet");
+        {
+            if (stopRequested.load())
+                return;
+
+            perror("Error reading packet");
             continue;
         }
 
@@ -165,15 +171,19 @@ int sendHandshake(
 void serverToTun(
     int tun_fd,
     int sockfd,
-    const SessionKeys& sessionKeys)
+    const SessionKeys& sessionKeys,
+    atomic<bool>& stopRequested)
 {
     unsigned char buffer[kMaxVpnTunPacketBytes];
 
-    while (true)
+    while (!stopRequested.load())
     {
         int bytesReceived = recvfrom(sockfd,buffer, sizeof(buffer), 0,nullptr,nullptr);
         if (bytesReceived < 0)
         {
+            if (stopRequested.load())
+                return;
+
             perror("Failed to receive packet");
             continue;
         }
@@ -187,6 +197,13 @@ void serverToTun(
         {
             cerr << "Server-to-client packet authentication failed; dropping packet" << endl;
             continue;
+        }
+
+        if( string(plaintext.begin(), plaintext.end()) == "VPN_DISCONNECT")
+        {
+            cout << "Received disconnect message from server." << endl;
+            stopRequested.store(true);
+            return;
         }
 
         ssize_t bytesWritten = write(tun_fd, plaintext.data(), plaintext.size());

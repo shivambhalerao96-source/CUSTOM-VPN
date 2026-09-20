@@ -443,48 +443,6 @@ void startForwarding(int sockfd, int tun_fd)
 
                     continue;
                 }  
-                else if( message == "VPN_DISCONNECT")
-                {
-                    auto client = find_if(
-                        vpn_ip.begin(),
-                        vpn_ip.end(),
-                        [&](const auto& entry)
-                        {
-                            return entry.second.address.sin_addr.s_addr ==
-                                       clientAddress.sin_addr.s_addr &&
-                                   entry.second.address.sin_port ==
-                                       clientAddress.sin_port;
-                        });
-
-                    if (client != vpn_ip.end())
-                    {
-                        cout << "Client " << client->first
-                             << " disconnected." << endl;
-
-                             // send a disconnect message to the client
-                             string response = "VPN_DISCONNECT";
-                             sendto(
-                                sockfd,
-                                response.c_str(),
-                                response.size(),
-                                0,
-                                (sockaddr*)&clientAddress,
-                                clientLength
-                            );
-                        vpn_ipv6_to_ipv4.erase(client->second.vpnIPv6);
-                        vpn_ip.erase(client);
-                         
-                        
-                    }
-                    else
-                    {
-                        cerr << "Received disconnect from an unregistered client; ignoring." << endl;
-                    }
-
-                    continue;
-                }
-                
-
                 else
                 {
                     auto client = find_if(
@@ -519,6 +477,31 @@ void startForwarding(int sockfd, int tun_fd)
                             plaintext))
                     {
                         cerr << "Client-to-server packet authentication failed; dropping packet" << endl;
+                        continue;
+                    }
+
+                    if (string(plaintext.begin(), plaintext.end()) == "VPN_DISCONNECT")
+                    {
+                        vector<unsigned char> encryptedResponse;
+                        const unsigned char response[] = "VPN_DISCONNECT";
+                        if (encryptVpnPacket(
+                                response,
+                                sizeof(response) - 1,
+                                client->second.sessionKeys.serverToClient,
+                                encryptedResponse))
+                        {
+                            sendto(
+                                sockfd,
+                                encryptedResponse.data(),
+                                encryptedResponse.size(),
+                                0,
+                                (sockaddr*)&clientAddress,
+                                clientLength);
+                        }
+
+                        cout << "Client " << client->first << " disconnected." << endl;
+                        vpn_ipv6_to_ipv4.erase(client->second.vpnIPv6);
+                        vpn_ip.erase(client);
                         continue;
                     }
 
