@@ -12,6 +12,7 @@
 #include <QLabel>
 #include <QPropertyAnimation>
 #include <QProcess>
+#include <QPlainTextEdit>
 #include <QPushButton>
 #include <QTimer>
 #include <QVBoxLayout>
@@ -106,7 +107,7 @@ int main(int argc, char *argv[])
     QWidget window;
 
     window.setWindowTitle("Custom VPN");
-    window.resize(820, 560);
+    window.resize(820, 680);
     window.setStyleSheet(R"(
         QWidget { background: #050505; color: #f5eeee; font-family: "DejaVu Sans"; }
         QLabel#eyebrow { color: #e05252; font-size: 11px; font-weight: 700; letter-spacing: 2px; }
@@ -182,6 +183,21 @@ int main(int argc, char *argv[])
     auto* location = addMetric("Geographic location", 1, 0);
     auto* status = addMetric("VPN status", 1, 1);
     root->addWidget(dashboard);
+    // // debugging output for kernel messages and client logs
+
+    // auto* outputGroup = new QGroupBox("Kernel output");
+    // auto* outputLayout = new QVBoxLayout(outputGroup);
+    // auto* output = new QPlainTextEdit;
+    // output->setReadOnly(true);
+    // output->setPlaceholderText("VPN client output will appear here...");
+    // output->setMinimumHeight(150);
+    // output->setStyleSheet(
+    //     "QPlainTextEdit { background: #080606; border: 1px solid #442020; "
+    //     "border-radius: 8px; padding: 8px; color: #e8caca; "
+    //     "font-family: monospace; font-size: 12px; }");
+    // outputLayout->addWidget(output);
+    // root->addWidget(outputGroup);
+    // // end debugging output
     root->addStretch();
 
     auto addShadow = [](QWidget* widget, const QColor& color, int blurRadius) {
@@ -223,6 +239,10 @@ int main(int argc, char *argv[])
     {
         client->setProgram(clientBinary);
     }
+    // client->setProcessChannelMode(QProcess::MergedChannels);
+    // QObject::connect(client, &QProcess::readyReadStandardOutput, &window, [=]() {
+    //     output->appendPlainText(QString::fromLocal8Bit(client->readAllStandardOutput()));
+    // });
     // auto* geoLookup = new QProcess(&window);
     // location->setText("Geographic location\nLooking up...");
     // geoLookup->start("curl", {"--silent", "--max-time", "5", "https://ipapi.co/json/"});

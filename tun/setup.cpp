@@ -151,7 +151,10 @@ int assign_ipv6_address(const string & vpn_ipv6){
 //     return 0;
 // }
 
-int create_tun_interface(const string & vpn_ipv4, const string & vpn_ipv6) {
+int create_tun_interface(
+    const string& vpn_ipv4,
+    const string& vpn_ipv6,
+    const string& vpn_server_ip) {
 
     
 
@@ -188,6 +191,6 @@ if (!vpn_ipv6.empty() && assign_ipv6_address(vpn_ipv6) != 0) {
 }
 
 up();
-reroute(vpn_ipv4.c_str());
+reroute(vpn_server_ip.c_str());
 return fd;
 }

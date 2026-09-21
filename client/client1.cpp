@@ -35,6 +35,7 @@ int main(int argc, char* argv[])
     serverAddress.sin_port = htons(8080);
 
     const char* serverIp = argc > 1 ? argv[1] : "";
+    //serverIp= "35.226.148.101"; // hardcoded for testing
     if( serverIp[0] == '\0') {
         cerr << "Please provide the VPN server IPv4 address as a command-line argument." << endl;
         close(sockfd);
@@ -73,7 +74,10 @@ int main(int argc, char* argv[])
         wipeSessionKeys(sessionKeys);
         return 1;
     }
-    int tun_fd = create_tun_interface(assignedAddresses.ipv4, assignedAddresses.ipv6);
+    int tun_fd = create_tun_interface(
+        assignedAddresses.ipv4,
+        assignedAddresses.ipv6,
+        serverIp);
 
     if (tun_fd < 0)
     {
