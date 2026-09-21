@@ -32,7 +32,7 @@ int main()
     serverAddress.sin_family = AF_INET;
     serverAddress.sin_port = htons(8080);
 
-    if (inet_pton(AF_INET, "34.84.46.243", &serverAddress.sin_addr) != 1)
+    if (inet_pton(AF_INET, "35.226.148.101", &serverAddress.sin_addr) != 1)
     {
         cerr << "Invalid VPN server IPv4 address" << endl;
         close(sockfd);
