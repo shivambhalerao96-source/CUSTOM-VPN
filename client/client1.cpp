@@ -72,7 +72,7 @@ int main(int argc, char* argv[])
         wipeSessionKeys(sessionKeys);
         return 1;
     }
-    int tun_fd = create_tun_interface(assignedAddresses.ipv4, assignedAddresses.ipv6, serverIp);
+    int tun_fd = create_tun_interface(assignedAddresses.ipv4, assignedAddresses.ipv6);
 
     if (tun_fd < 0)
     {
@@ -84,7 +84,8 @@ int main(int argc, char* argv[])
 
     cout << "TUN interface created successfully." << endl;
 
-    atomic<bool> stopRequested{false};
+    SequenceNumberSender clientToServerSequence;
+    ReplayWindow serverToClientReplay;
 
     thread sender(
         tunToServer,
@@ -92,12 +93,18 @@ int main(int argc, char* argv[])
         sockfd,
         serverAddress,
         cref(sessionKeys),
-        ref(stopRequested));
+        ref(stopRequested),
+        ref(clientToServerSequence));
     thread receiver(
+        
         serverToTun,
+       
         tun_fd,
+       
         sockfd,
+       
         cref(sessionKeys),
+        ref(serverToClientReplay),
         ref(stopRequested));
 
     thread control([&]() {

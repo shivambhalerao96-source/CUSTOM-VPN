@@ -41,7 +41,7 @@ string get_router_ip() {
     // cout<<"outside llop"<<endl;
     // cout<<"result="<<result<<endl;
 
-    int status = pclose(pipe);
+     pclose(pipe);
 
     // Remove trailing newline
     while (!result.empty() &&
@@ -52,9 +52,38 @@ string get_router_ip() {
     return result;
 }
 
-void reroute(const char * vpn_server_ip) {
+static string detect_external_iface() {
+
+    string command =
+        "ip route show default | awk '{for(i=1;i<=NF;i++) if ($i==\"dev\") {print $(i+1); exit}}'";
+
+    FILE* pipe = popen(command.c_str(), "r");
+    if (pipe == nullptr) {
+        return "";
+    }
+
+    char buffer[128];
+    string iface;
+
+    while (fgets(buffer, sizeof(buffer), pipe) != nullptr) {
+        iface += buffer;
+    }
+
+    pclose(pipe);
+
+    while (!iface.empty() &&
+           (iface.back() == '\n' || iface.back() == '\r' ||
+            iface.back() == ' ' || iface.back() == '\t')) {
+        iface.pop_back();
+    }
+
+    return iface;
+}
+
+void reroute(){
 
     string router= get_router_ip();// gets the router ip address
+    string iface = detect_external_iface();
 
    
 
@@ -65,8 +94,14 @@ void reroute(const char * vpn_server_ip) {
 
     // formulates the command to be executed
 
-    // make ip packets with destination vpn server go through the wifi 
-    string cmd= string("sudo ip route add ")+ vpn_server_ip + string(" via ")+ router+ " dev wlo1";
+    if (iface.empty()) {
+        cerr << "Failed to detect default network interface." << endl;
+        return;
+    }
+
+    // make ip packets with destination vpn server go through the physical interface
+    string cmd = string("sudo ip route add 34.84.46.243 via ") + router +
+                 " dev " + iface;
     system(cmd.c_str());
     // make ip packets with destination other than vpn server go through tun0
     int status = system("sudo ip route add default dev tun0 metric 50");
@@ -116,7 +151,7 @@ int assign_ipv6_address(const string & vpn_ipv6){
 //     return 0;
 // }
 
-int create_tun_interface(const string & vpn_ipv4, const string & vpn_ipv6, const string & vpn_server_ip) {
+int create_tun_interface(const string & vpn_ipv4, const string & vpn_ipv6) {
 
     
 

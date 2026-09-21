@@ -2,6 +2,7 @@
 #include "../crypto/handshake.h"
 #include "../crypto/packet_crypto.h"
 #include "../crypto/session_keys.h"
+#include "../crypto/replay_protection.h"
 #include <iostream>
 #include <sys/socket.h>
 #include <arpa/inet.h>
@@ -9,6 +10,7 @@
 #include <sys/select.h>
 #include <algorithm>
 #include <netinet/ip.h>
+#include <netinet/ip6.h>
 #include <netinet/ip6.h>
 #include <netinet/tcp.h>
 #include <netinet/udp.h>
@@ -24,8 +26,11 @@ struct ClientInfo {
     sockaddr_in address;
     string vpnIP;
     string vpnIPv6;
+    string vpnIPv6;
     X25519SharedSecret sharedSecret;
     SessionKeys sessionKeys;
+    SequenceNumberSender serverToClientSequence;
+    ReplayWindow clientToServerReplay;
 
     ~ClientInfo()
     {
@@ -35,6 +40,21 @@ struct ClientInfo {
 };
 
 unordered_map<string, ClientInfo> vpn_ip;// maps the vpn_ip to client info 
+
+// Maps a client's VPN IPv6 address back to the VPN IPv4 address used as the
+// key in vpn_ip above. This keeps ClientInfo (and its secret-wiping
+// destructor) stored in exactly one place; the IPv6 map is just a second
+// index onto the same records, so nothing about session-key ownership or
+// lifetime changes.
+unordered_map<string, string> vpn_ipv6_to_ipv4;
+
+// ULA (Unique Local Address) /64 prefix used for the VPN's internal IPv6
+// addressing, analogous to the 10.0.0.0/24 used for IPv4. This range is not
+// globally routable by itself -- getting it out to the real IPv6 Internet
+// is handled by NAT66 (ip6tables MASQUERADE) on the server, set up in
+// server.cpp, exactly the way MASQUERADE already does it for the IPv4 range.
+static const string kVpnIPv6Prefix = "fd00:dead:beef::";
+
 
 // Maps a client's VPN IPv6 address back to the VPN IPv4 address used as the
 // key in vpn_ip above. This keeps ClientInfo (and its secret-wiping
@@ -64,6 +84,33 @@ string allocateVPNIP()
     }
 
     return "";
+}
+
+// Derives this client's VPN IPv6 address from the IPv4 address it was just
+// allocated, by reusing the same host id (the last IPv4 octet) inside the
+// IPv6 /64 range. Because it's derived from an already-uniquely-allocated
+// IPv4 address, it's automatically unique too -- no separate IPv6 allocation
+// table or free-list is needed, and allocateVPNIP() above stays untouched.
+string deriveVpnIPv6FromIPv4(const string& vpnIPv4)
+{
+    size_t lastDot = vpnIPv4.find_last_of('.');
+    if (lastDot == string::npos)
+        return "";
+
+    string hostIdText = vpnIPv4.substr(lastDot + 1);
+    int hostId = 0;
+    try
+    {
+        hostId = stoi(hostIdText);
+    }
+    catch (...)
+    {
+        return "";
+    }
+
+    ostringstream oss;
+    oss << kVpnIPv6Prefix << hex << hostId;
+    return oss.str();
 }
 
 // Derives this client's VPN IPv6 address from the IPv4 address it was just
@@ -267,25 +314,23 @@ bool handleHandshake(int sockfd, const char* buffer, int bytesReceived, sockaddr
         return true;
     }
 
-    // Check whether this client already exists
-    for (auto& [vpnIP, client] : vpn_ip)
-    {
-        if (client.address.sin_addr.s_addr ==
-                clientAddress.sin_addr.s_addr &&
-            client.address.sin_port ==
-                clientAddress.sin_port)
+    // Find an existing session for this UDP endpoint. A restarted client can
+    // reuse the same source port, but it has a new ephemeral X25519 key pair.
+    // Keep its VPN address while completing a fresh key exchange below.
+    auto existingClient = find_if(
+        vpn_ip.begin(),
+        vpn_ip.end(),
+        [&](const auto& entry)
         {
-            cout << "Client already registered as "
-                 << vpnIP << endl;
+            return entry.second.address.sin_addr.s_addr ==
+                       clientAddress.sin_addr.s_addr &&
+                   entry.second.address.sin_port == clientAddress.sin_port;
+        });
 
-            //string response = "VPN_IP " + vpnIP;
-
-            return true;
-        }
-    }
-
-    // Allocate a new VPN IP
-    string vpnIP = allocateVPNIP();
+    // Allocate a new VPN IP only for a new UDP endpoint.
+    string vpnIP = existingClient == vpn_ip.end()
+                       ? allocateVPNIP()
+                       : existingClient->first;
 
     if (vpnIP.empty())
     {
@@ -347,7 +392,22 @@ bool handleHandshake(int sockfd, const char* buffer, int bytesReceived, sockaddr
         return true;
     }
 
-    vpn_ip.emplace(vpnIP, client);
+    if (existingClient == vpn_ip.end())
+    {
+        vpn_ip.emplace(vpnIP, client);
+    if (!vpnIPv6.empty())
+        vpn_ipv6_to_ipv4[vpnIPv6] = vpnIP;
+    }
+    else
+    {
+        // Do not let assignment discard the old secret without wiping it.
+        // Replacing the complete record also resets sequence/replay state for
+        // the newly negotiated session.
+        wipeX25519SharedSecret(existingClient->second.sharedSecret);
+        wipeSessionKeys(existingClient->second.sessionKeys);
+        existingClient->second = client;
+        cout << "VPN client session refreshed for " << vpnIP << endl;
+    }
     if (!vpnIPv6.empty())
         vpn_ipv6_to_ipv4[vpnIPv6] = vpnIP;
 
@@ -400,7 +460,7 @@ void startForwarding(int sockfd, int tun_fd)
 
     while (true)
     {
-        // readfds is noting but a array of bits which tells if the file descriptor at that index is being monitered or not if it is being monitered go shed and read and write 
+        // readfds is noting but a array of bits which tells if the file descriptor at that index is being monitered or not if it is being monitered go shed and read and write
         fd_set readfds;
         FD_ZERO(&readfds);
 
@@ -470,10 +530,12 @@ void startForwarding(int sockfd, int tun_fd)
                     // auto-detects v4 vs v6 from the packet itself in
                     // IFF_NO_PI mode. No change needed here for IPv6.
                     vector<unsigned char> plaintext;
-                    if (!decryptVpnPacket(
+                    uint64_t sequence = 0;
+                    if (!decryptSequencedVpnPacket(
                             buffer,
                             static_cast<size_t>(bytesReceived),
                             client->second.sessionKeys.clientToServer,
+                            sequence,
                             plaintext))
                     {
                         cerr << "Client-to-server packet authentication failed; dropping packet" << endl;
@@ -502,6 +564,14 @@ void startForwarding(int sockfd, int tun_fd)
                         cout << "Client " << client->first << " disconnected." << endl;
                         vpn_ipv6_to_ipv4.erase(client->second.vpnIPv6);
                         vpn_ip.erase(client);
+                        continue;
+                    }
+
+                    cout << "Client-to-server sequence number: " << sequence << endl;
+
+                    if (!client->second.clientToServerReplay.accept(sequence))
+                    {
+                        cerr << "Client-to-server replay detected; dropping packet" << endl;
                         continue;
                     }
 
@@ -623,8 +693,16 @@ void startForwarding(int sockfd, int tun_fd)
                     continue;
                 }
 
+                uint64_t sequence = 0;
+                if (!client->second.serverToClientSequence.nextSequence(sequence))
+                {
+                    cerr << "Server-to-client sequence space exhausted; dropping packet" << endl;
+                    continue;
+                }
+
                 vector<unsigned char> encryptedPacket;
-                if (!encryptVpnPacket(
+                if (!encryptSequencedVpnPacket(
+                        sequence,
                         buffer,
                         static_cast<size_t>(bytesRead),
                         client->second.sessionKeys.serverToClient,
@@ -633,6 +711,8 @@ void startForwarding(int sockfd, int tun_fd)
                     cerr << "Failed to encrypt server-to-client packet; dropping packet" << endl;
                     continue;
                 }
+
+                cout << "Server-to-client sequence number: " << sequence << endl;
 
                 ssize_t bytesSent = sendto(
                     sockfd,
