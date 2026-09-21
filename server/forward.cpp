@@ -26,7 +26,6 @@ struct ClientInfo {
     sockaddr_in address;
     string vpnIP;
     string vpnIPv6;
-    string vpnIPv6;
     X25519SharedSecret sharedSecret;
     SessionKeys sessionKeys;
     SequenceNumberSender serverToClientSequence;
@@ -53,7 +52,7 @@ unordered_map<string, string> vpn_ipv6_to_ipv4;
 // globally routable by itself -- getting it out to the real IPv6 Internet
 // is handled by NAT66 (ip6tables MASQUERADE) on the server, set up in
 // server.cpp, exactly the way MASQUERADE already does it for the IPv4 range.
-static const string kVpnIPv6Prefix = "fd00:dead:beef::";
+//static const string kVpnIPv6Prefix = "fd00:dead:beef::";
 
 
 // Maps a client's VPN IPv6 address back to the VPN IPv4 address used as the
@@ -61,7 +60,7 @@ static const string kVpnIPv6Prefix = "fd00:dead:beef::";
 // destructor) stored in exactly one place; the IPv6 map is just a second
 // index onto the same records, so nothing about session-key ownership or
 // lifetime changes.
-unordered_map<string, string> vpn_ipv6_to_ipv4;
+//unordered_map<string, string> vpn_ipv6_to_ipv4;
 
 // ULA (Unique Local Address) /64 prefix used for the VPN's internal IPv6
 // addressing, analogous to the 10.0.0.0/24 used for IPv4. This range is not
@@ -91,27 +90,6 @@ string allocateVPNIP()
 // IPv6 /64 range. Because it's derived from an already-uniquely-allocated
 // IPv4 address, it's automatically unique too -- no separate IPv6 allocation
 // table or free-list is needed, and allocateVPNIP() above stays untouched.
-string deriveVpnIPv6FromIPv4(const string& vpnIPv4)
-{
-    size_t lastDot = vpnIPv4.find_last_of('.');
-    if (lastDot == string::npos)
-        return "";
-
-    string hostIdText = vpnIPv4.substr(lastDot + 1);
-    int hostId = 0;
-    try
-    {
-        hostId = stoi(hostIdText);
-    }
-    catch (...)
-    {
-        return "";
-    }
-
-    ostringstream oss;
-    oss << kVpnIPv6Prefix << hex << hostId;
-    return oss.str();
-}
 
 // Derives this client's VPN IPv6 address from the IPv4 address it was just
 // allocated, by reusing the same host id (the last IPv4 octet) inside the

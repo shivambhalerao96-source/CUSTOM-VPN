@@ -1,4 +1,0 @@
-/home/advait/Desktop/CUSTOM-VPN/client/build/CMakeFiles/cl.dir
-/home/advait/Desktop/CUSTOM-VPN/client/build/CMakeFiles/run.dir
-/home/advait/Desktop/CUSTOM-VPN/client/build/CMakeFiles/edit_cache.dir
-/home/advait/Desktop/CUSTOM-VPN/client/build/CMakeFiles/rebuild_cache.dir

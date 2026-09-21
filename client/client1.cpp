@@ -8,6 +8,7 @@
 
 #include "../tun/setup.h"
 #include "transport.h"
+#include "disconnect.h"
 
 using namespace std;
 
@@ -84,6 +85,7 @@ int main(int argc, char* argv[])
 
     cout << "TUN interface created successfully." << endl;
 
+    std::atomic<bool> stopRequested{false};
     SequenceNumberSender clientToServerSequence;
     ReplayWindow serverToClientReplay;
 
@@ -96,26 +98,29 @@ int main(int argc, char* argv[])
         ref(stopRequested),
         ref(clientToServerSequence));
     thread receiver(
-        
         serverToTun,
-       
         tun_fd,
-       
         sockfd,
-       
         cref(sessionKeys),
-        ref(serverToClientReplay),
-        ref(stopRequested));
+        ref(stopRequested),
+        ref(serverToClientReplay));
 
     thread control([&]() {
         string command;
-        if (getline(cin, command) && command == "disconnect")
+        while (!stopRequested.load())
         {
-            sendDisconnectMessage(sockfd, serverAddress, sessionKeys);
-            stopRequested.store(true);
-            shutdown(sockfd, SHUT_RDWR);
-            close(sockfd);
-            close(tun_fd);
+            if (!getline(cin, command))
+                break;
+
+            if (command == "disconnect")
+            {
+                sendDisconnectMessage(sockfd, serverAddress, sessionKeys);
+                stopRequested.store(true);
+                shutdown(sockfd, SHUT_RDWR);
+                close(sockfd);
+                close(tun_fd);
+                break;
+            }
         }
     });
 
@@ -125,8 +130,9 @@ int main(int argc, char* argv[])
 
     wipeX25519SharedSecret(sharedSecret);
     wipeSessionKeys(sessionKeys);
-    
-    close(sockfd);
+
+    if (sockfd >= 0)
+        close(sockfd);
 
     return 0;
 }

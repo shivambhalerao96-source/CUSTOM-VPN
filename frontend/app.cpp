@@ -1,6 +1,7 @@
 #include <QApplication>
 #include <QComboBox>
 #include <QCoreApplication>
+#include <QDir>
 #include <QGridLayout>
 #include <QGraphicsDropShadowEffect>
 #include <QGraphicsOpacityEffect>
@@ -25,6 +26,27 @@
 
 namespace
 {
+QString resolveClientBinaryPath()
+{
+    const QString appDir = QCoreApplication::applicationDirPath();
+    const QString currentDir = QDir::currentPath();
+    const QStringList candidates = {
+        QDir(appDir).absoluteFilePath("vpn_client"),
+        QDir(currentDir).absoluteFilePath("vpn_client"),
+        QDir(currentDir).filePath("../vpn_client"),
+        QDir(appDir).filePath("../vpn_client"),
+        QDir::cleanPath(appDir + "/../vpn_client")
+    };
+
+    for (const QString& candidate : candidates)
+    {
+        if (!candidate.isEmpty() && QFileInfo(candidate).exists())
+            return candidate;
+    }
+
+    return QString();
+}
+
 QString localIpv4Address()
 {
     ifaddrs* interfaces = nullptr;
@@ -126,9 +148,9 @@ int main(int argc, char *argv[])
     auto* controls = new QGroupBox("Connection");
     auto* controlsLayout = new QHBoxLayout(controls);
     auto* server = new QComboBox;
-    server->addItem("USA VPN  •  34.145.231.1", "34.145.231.1");
-    server->addItem("Europe VPN  •  8.228.37.190", "8.228.37.190");
-    server->addItem("Local development  •  127.0.0.1", "127.0.0.1");
+    server->addItem("USA VPN  •  35.226.148.101", "35.226.148.101");
+    server->addItem("Europe VPN  •  34.105.188.210", "34.105.188.210");
+    server->addItem("Asia VPN  •  34.84.46.243", "34.84.46.243");
     QString selectedServerIp = server->currentData().toString();
     QObject::connect(server, &QComboBox::currentIndexChanged, &window,
                      [&selectedServerIp, server](int index) {
@@ -190,8 +212,17 @@ int main(int argc, char *argv[])
     });
 
     auto* client = new QProcess(&window);
-    client->setProgram(QCoreApplication::applicationDirPath() + "/vpn_client");
-    // client->setWorkingDirectory(QCoreApplication::applicationDirPath());
+    const QString clientBinary = resolveClientBinaryPath();
+    if (clientBinary.isEmpty())
+    {
+        status->setText("VPN status\nBinary missing");
+        runButton->setEnabled(false);
+        closeButton->setEnabled(false);
+    }
+    else
+    {
+        client->setProgram(clientBinary);
+    }
     // auto* geoLookup = new QProcess(&window);
     // location->setText("Geographic location\nLooking up...");
     // geoLookup->start("curl", {"--silent", "--max-time", "5", "https://ipapi.co/json/"});
