@@ -32,7 +32,12 @@ int main()
     serverAddress.sin_family = AF_INET;
     serverAddress.sin_port = htons(8080);
 
-    inet_pton(AF_INET, "35.226.148.101", &serverAddress.sin_addr);
+    if (inet_pton(AF_INET, "34.84.46.243", &serverAddress.sin_addr) != 1)
+    {
+        cerr << "Invalid VPN server IPv4 address" << endl;
+        close(sockfd);
+        return 1;
+    }
 
     // getting the vpn ip from the server and creating the tun interface with that ip
     cout << "Sending handshake to server..." << endl;

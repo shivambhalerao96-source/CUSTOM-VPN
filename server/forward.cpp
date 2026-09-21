@@ -21,8 +21,7 @@
 #include <vector>
 
 using namespace std;
-struct ClientInfo
-{
+struct ClientInfo {
     sockaddr_in address;
     string vpnIP;
     string vpnIPv6;
@@ -38,7 +37,7 @@ struct ClientInfo
     }
 };
 
-unordered_map<string, ClientInfo> vpn_ip; // maps the vpn_ip to client info
+unordered_map<string, ClientInfo> vpn_ip;// maps the vpn_ip to client info 
 
 // Maps a client's VPN IPv6 address back to the VPN IPv4 address used as the
 // key in vpn_ip above. This keeps ClientInfo (and its secret-wiping
@@ -55,7 +54,7 @@ unordered_map<string, string> vpn_ipv6_to_ipv4;
 static const string kVpnIPv6Prefix = "fd00:dead:beef::";
 
 string allocateVPNIP()
-{ // here we are allocating the vpn ip address to the client and we are checking if the ip address is already allocated or not if it is allocated we will return the next available ip address
+{// here we are allocating the vpn ip address to the client and we are checking if the ip address is already allocated or not if it is allocated we will return the next available ip address
     for (int i = 1; i <= 254; i++)
     {
         string ip = "10.0.0." + to_string(i);
@@ -75,7 +74,7 @@ string allocateVPNIP()
 // IPv6 /64 range. Because it's derived from an already-uniquely-allocated
 // IPv4 address, it's automatically unique too -- no separate IPv6 allocation
 // table or free-list is needed, and allocateVPNIP() above stays untouched.
-string deriveVpnIPv6FromIPv4(const string &vpnIPv4)
+string deriveVpnIPv6FromIPv4(const string& vpnIPv4)
 {
     size_t lastDot = vpnIPv4.find_last_of('.');
     if (lastDot == string::npos)
@@ -244,7 +243,7 @@ string deriveVpnIPv6FromIPv4(const string &vpnIPv4)
 //     cout << "-----------------" << endl;
 // }
 
-bool handleHandshake(int sockfd, const char *buffer, int bytesReceived, sockaddr_in &clientAddress, socklen_t clientLength)
+bool handleHandshake(int sockfd, const char* buffer, int bytesReceived, sockaddr_in& clientAddress, socklen_t clientLength)
 {
     string message(buffer, bytesReceived);
     const string prefix = "VPN_HELLO ";
@@ -257,7 +256,7 @@ bool handleHandshake(int sockfd, const char *buffer, int bytesReceived, sockaddr
         cerr << "Client X25519 public key is missing" << endl;
         string response = "VPN_HANDSHAKE_FAILED";
         sendto(sockfd, response.c_str(), response.size(), 0,
-               (sockaddr *)&clientAddress, clientLength);
+               (sockaddr*)&clientAddress, clientLength);
         return true;
     }
 
@@ -267,29 +266,27 @@ bool handleHandshake(int sockfd, const char *buffer, int bytesReceived, sockaddr
         cerr << "Invalid client X25519 public key" << endl;
         string response = "VPN_HANDSHAKE_FAILED";
         sendto(sockfd, response.c_str(), response.size(), 0,
-               (sockaddr *)&clientAddress, clientLength);
+               (sockaddr*)&clientAddress, clientLength);
         return true;
     }
 
-    // Check whether this client already exists
-    for (auto &[vpnIP, client] : vpn_ip)
-    {
-        if (client.address.sin_addr.s_addr ==
-                clientAddress.sin_addr.s_addr &&
-            client.address.sin_port ==
-                clientAddress.sin_port)
+    // Find an existing session for this UDP endpoint. A restarted client can
+    // reuse the same source port, but it has a new ephemeral X25519 key pair.
+    // Keep its VPN address while completing a fresh key exchange below.
+    auto existingClient = find_if(
+        vpn_ip.begin(),
+        vpn_ip.end(),
+        [&](const auto& entry)
         {
-            cout << "Client already registered as "
-                 << vpnIP << endl;
+            return entry.second.address.sin_addr.s_addr ==
+                       clientAddress.sin_addr.s_addr &&
+                   entry.second.address.sin_port == clientAddress.sin_port;
+        });
 
-            // string response = "VPN_IP " + vpnIP;
-
-            return true;
-        }
-    }
-
-    // Allocate a new VPN IP
-    string vpnIP = allocateVPNIP();
+    // Allocate a new VPN IP only for a new UDP endpoint.
+    string vpnIP = existingClient == vpn_ip.end()
+                       ? allocateVPNIP()
+                       : existingClient->first;
 
     if (vpnIP.empty())
     {
@@ -300,8 +297,9 @@ bool handleHandshake(int sockfd, const char *buffer, int bytesReceived, sockaddr
             response.c_str(),
             response.size(),
             0,
-            (sockaddr *)&clientAddress,
-            clientLength);
+            (sockaddr*)&clientAddress,
+            clientLength
+        );
 
         return true;
     }
@@ -316,7 +314,7 @@ bool handleHandshake(int sockfd, const char *buffer, int bytesReceived, sockaddr
         cerr << "Failed to generate the server X25519 key pair" << endl;
         string response = "VPN_HANDSHAKE_FAILED";
         sendto(sockfd, response.c_str(), response.size(), 0,
-               (sockaddr *)&clientAddress, clientLength);
+               (sockaddr*)&clientAddress, clientLength);
         return true;
     }
 
@@ -336,7 +334,7 @@ bool handleHandshake(int sockfd, const char *buffer, int bytesReceived, sockaddr
         wipeX25519PrivateKey(serverKeyPair);
         string response = "VPN_HANDSHAKE_FAILED";
         sendto(sockfd, response.c_str(), response.size(), 0,
-               (sockaddr *)&clientAddress, clientLength);
+               (sockaddr*)&clientAddress, clientLength);
         return true;
     }
 
@@ -346,11 +344,24 @@ bool handleHandshake(int sockfd, const char *buffer, int bytesReceived, sockaddr
         wipeX25519PrivateKey(serverKeyPair);
         string response = "VPN_HANDSHAKE_FAILED";
         sendto(sockfd, response.c_str(), response.size(), 0,
-               (sockaddr *)&clientAddress, clientLength);
+               (sockaddr*)&clientAddress, clientLength);
         return true;
     }
 
-    vpn_ip.emplace(vpnIP, client);
+    if (existingClient == vpn_ip.end())
+    {
+        vpn_ip.emplace(vpnIP, client);
+    }
+    else
+    {
+        // Do not let assignment discard the old secret without wiping it.
+        // Replacing the complete record also resets sequence/replay state for
+        // the newly negotiated session.
+        wipeX25519SharedSecret(existingClient->second.sharedSecret);
+        wipeSessionKeys(existingClient->second.sessionKeys);
+        existingClient->second = client;
+        cout << "VPN client session refreshed for " << vpnIP << endl;
+    }
     if (!vpnIPv6.empty())
         vpn_ipv6_to_ipv4[vpnIPv6] = vpnIP;
 
@@ -364,7 +375,8 @@ bool handleHandshake(int sockfd, const char *buffer, int bytesReceived, sockaddr
         AF_INET,
         &clientAddress.sin_addr,
         ip,
-        sizeof(ip));
+        sizeof(ip)
+    );
 
     cout << "Real IP: " << ip
          << ":" << ntohs(clientAddress.sin_port)
@@ -380,8 +392,9 @@ bool handleHandshake(int sockfd, const char *buffer, int bytesReceived, sockaddr
         response.c_str(),
         response.size(),
         0,
-        (sockaddr *)&clientAddress,
-        clientLength);
+        (sockaddr*)&clientAddress,
+        clientLength
+    );
 
     cout << "X25519 key agreement completed. Shared-secret fingerprint: "
          << sharedSecretFingerprint(client.sharedSecret) << endl;
@@ -422,34 +435,35 @@ void startForwarding(int sockfd, int tun_fd)
             clientLength = sizeof(clientAddress);
             int bytesReceived = recvfrom(
                 sockfd, buffer, sizeof(buffer), 0,
-                (sockaddr *)&clientAddress, &clientLength);
+                (sockaddr*)&clientAddress, &clientLength);
 
             if (bytesReceived > 0)
             {
                 cout << "\n[CLIENT -> SERVER]" << endl;
-
+                
                 string message(
-                    reinterpret_cast<const char *>(buffer),
+                    reinterpret_cast<const char*>(buffer),
                     bytesReceived);
-                // handling the initial handshake with client
-                if (message.rfind("VPN_HELLO", 0) == 0)
-                {
+                // handling the initial handshake with client 
+               if (message.rfind("VPN_HELLO", 0) == 0)
+                {          
                     handleHandshake(
                         sockfd,
-                        reinterpret_cast<const char *>(buffer),
+                        reinterpret_cast<const char*>(buffer),
                         bytesReceived,
                         clientAddress,
-                        clientLength);
+                        clientLength
+                        );
 
                     continue;
-                }
+                }   
 
                 else
                 {
                     auto client = find_if(
                         vpn_ip.begin(),
                         vpn_ip.end(),
-                        [&](const auto &entry)
+                        [&](const auto& entry)
                         {
                             return entry.second.address.sin_addr.s_addr ==
                                        clientAddress.sin_addr.s_addr &&
@@ -482,6 +496,8 @@ void startForwarding(int sockfd, int tun_fd)
                         cerr << "Client-to-server packet authentication failed; dropping packet" << endl;
                         continue;
                     }
+
+                    cout << "Client-to-server sequence number: " << sequence << endl;
 
                     if (!client->second.clientToServerReplay.accept(sequence))
                     {
@@ -536,7 +552,7 @@ void startForwarding(int sockfd, int tun_fd)
                         continue;
                     }
 
-                    iphdr *ipHeader = reinterpret_cast<iphdr *>(buffer);
+                    iphdr* ipHeader = reinterpret_cast<iphdr*>(buffer);
                     int ipHeaderLength = ipHeader->ihl * 4;
 
                     if (ipHeader->version != 4 ||
@@ -572,7 +588,7 @@ void startForwarding(int sockfd, int tun_fd)
                         continue;
                     }
 
-                    ip6_hdr *ip6Header = reinterpret_cast<ip6_hdr *>(buffer);
+                    ip6_hdr* ip6Header = reinterpret_cast<ip6_hdr*>(buffer);
 
                     char destinationIPv6[INET6_ADDRSTRLEN];
                     if (inet_ntop(AF_INET6, &ip6Header->ip6_dst,
@@ -626,12 +642,14 @@ void startForwarding(int sockfd, int tun_fd)
                     continue;
                 }
 
+                cout << "Server-to-client sequence number: " << sequence << endl;
+
                 ssize_t bytesSent = sendto(
                     sockfd,
                     encryptedPacket.data(),
                     encryptedPacket.size(),
                     0,
-                    (sockaddr *)&client->second.address,
+                    (sockaddr*)&client->second.address,
                     sizeof(client->second.address));
 
                 if (bytesSent < 0)
