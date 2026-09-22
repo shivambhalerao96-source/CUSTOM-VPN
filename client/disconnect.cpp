@@ -12,25 +12,29 @@
 #include "../tun/setup.h"
 
 using namespace std;
-void sendDisconnectMessage(int sockfd, sockaddr_in serverAddress,
-    const SessionKeys& sessionKeys)
+void sendDisconnectMessage(
+    int sockfd,
+    sockaddr_in serverAddress,
+    const SessionKeys& sessionKeys,
+    SequenceNumberSender& sendSequence,
+    mutex& sequenceMutex)
 {
     const unsigned char disconnectMessage[] = "VPN_DISCONNECT";
-    // ssize_t bytesSent = send(sockfd, disconnectMessage, strlen(disconnectMessage), 0);
-    // if (bytesSent < 0)
-    // {
-    //     perror("Failed to send disconnect message");
-    // }
-    // else
-    // {
-    //     std::cout << "Sent disconnect message to server." << std::endl;
-    // }
-
+    uint64_t sequence = 0;
+    {
+        lock_guard<mutex> lock(sequenceMutex);
+        if (!sendSequence.nextSequence(sequence))
+        {
+            cerr << "Client-to-server sequence space exhausted; cannot disconnect cleanly" << endl;
+            return;
+        }
+    }
 
     vector<unsigned char> encryptedPacket;
-        if (!encryptVpnPacket(
+        if (!encryptSequencedVpnPacket(
+                sequence,
                 disconnectMessage,
-                strlen(reinterpret_cast<const char*>(disconnectMessage)),
+                sizeof(disconnectMessage) - 1,
                 sessionKeys.clientToServer,
                 encryptedPacket))
         {
@@ -54,8 +58,11 @@ void sendDisconnectMessage(int sockfd, sockaddr_in serverAddress,
         {cout << "[TUN -> SERVER] Sent "<< bytesSent << " bytes" << endl;}
     }
 
-    void receiveDisconnectMessage(int sockfd,SessionKeys& sessionKeys,
-        X25519SharedSecret& sharedSecret)
+    void receiveDisconnectMessage(
+        int sockfd,
+        SessionKeys& sessionKeys,
+        X25519SharedSecret& sharedSecret,
+        ReplayWindow& receiveWindow)
     {
 
        
@@ -75,14 +82,22 @@ void sendDisconnectMessage(int sockfd, sockaddr_in serverAddress,
         }
 
         vector<unsigned char> plaintext;
-        if (!decryptVpnPacket(
+        uint64_t sequence = 0;
+        if (!decryptSequencedVpnPacket(
                 buffer,
                 static_cast<size_t>(bytesReceived),
                 sessionKeys.serverToClient,
+                sequence,
                 plaintext))
         {
             cerr << "Server-to-client packet authentication failed; dropping packet" << endl;
             return;
+        }
+
+        if (!receiveWindow.accept(sequence))
+        {
+            cerr << "Server-to-client replay detected; dropping packet" << endl;
+            continue;
         }
 
         string message(plaintext.begin(), plaintext.end());
@@ -99,11 +114,26 @@ void sendDisconnectMessage(int sockfd, sockaddr_in serverAddress,
     }
     }
 
-    void handleDisconnect(int sockfd, sockaddr_in serverAddress,
-     SessionKeys& sessionKeys, X25519SharedSecret& sharedSecret)
+    void handleDisconnect(
+        int sockfd,
+        sockaddr_in serverAddress,
+        SessionKeys& sessionKeys,
+        X25519SharedSecret& sharedSecret,
+        SequenceNumberSender& sendSequence,
+        mutex& sequenceMutex,
+        ReplayWindow& receiveWindow)
     {
-        sendDisconnectMessage(sockfd, serverAddress, sessionKeys);
-        receiveDisconnectMessage(sockfd, sessionKeys, sharedSecret);
+        sendDisconnectMessage(
+            sockfd,
+            serverAddress,
+            sessionKeys,
+            sendSequence,
+            sequenceMutex);
+        receiveDisconnectMessage(
+            sockfd,
+            sessionKeys,
+            sharedSecret,
+            receiveWindow);
         cout << "Disconnected from server." << endl;
     }
 

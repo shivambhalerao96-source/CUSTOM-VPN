@@ -520,15 +520,26 @@ void startForwarding(int sockfd, int tun_fd)
                         continue;
                     }
 
+                    if (!client->second.clientToServerReplay.accept(sequence))
+                    {
+                        cerr << "Client-to-server replay detected; dropping packet" << endl;
+                        continue;
+                    }
+
                     if (string(plaintext.begin(), plaintext.end()) == "VPN_DISCONNECT")
                     {
                         vector<unsigned char> encryptedResponse;
                         const unsigned char response[] = "VPN_DISCONNECT";
-                        if (encryptVpnPacket(
+                        uint64_t responseSequence = 0;
+                        const bool responseReady =
+                            client->second.serverToClientSequence.nextSequence(responseSequence) &&
+                            encryptSequencedVpnPacket(
+                                responseSequence,
                                 response,
                                 sizeof(response) - 1,
                                 client->second.sessionKeys.serverToClient,
-                                encryptedResponse))
+                                encryptedResponse);
+                        if (responseReady)
                         {
                             sendto(
                                 sockfd,
@@ -538,18 +549,14 @@ void startForwarding(int sockfd, int tun_fd)
                                 (sockaddr*)&clientAddress,
                                 clientLength);
                         }
+                        else
+                        {
+                            cerr << "Failed to encrypt disconnect confirmation" << endl;
+                        }
 
                         cout << "Client " << client->first << " disconnected." << endl;
                         vpn_ipv6_to_ipv4.erase(client->second.vpnIPv6);
                         vpn_ip.erase(client);
-                        continue;
-                    }
-
-                    cout << "Client-to-server sequence number: " << sequence << endl;
-
-                    if (!client->second.clientToServerReplay.accept(sequence))
-                    {
-                        cerr << "Client-to-server replay detected; dropping packet" << endl;
                         continue;
                     }
 
@@ -689,8 +696,6 @@ void startForwarding(int sockfd, int tun_fd)
                     cerr << "Failed to encrypt server-to-client packet; dropping packet" << endl;
                     continue;
                 }
-
-                cout << "Server-to-client sequence number: " << sequence << endl;
 
                 ssize_t bytesSent = sendto(
                     sockfd,
