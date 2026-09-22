@@ -185,18 +185,18 @@ int main(int argc, char *argv[])
     root->addWidget(dashboard);
     // // debugging output for kernel messages and client logs
 
-    // auto* outputGroup = new QGroupBox("Kernel output");
-    // auto* outputLayout = new QVBoxLayout(outputGroup);
-    // auto* output = new QPlainTextEdit;
-    // output->setReadOnly(true);
-    // output->setPlaceholderText("VPN client output will appear here...");
-    // output->setMinimumHeight(150);
-    // output->setStyleSheet(
-    //     "QPlainTextEdit { background: #080606; border: 1px solid #442020; "
-    //     "border-radius: 8px; padding: 8px; color: #e8caca; "
-    //     "font-family: monospace; font-size: 12px; }");
-    // outputLayout->addWidget(output);
-    // root->addWidget(outputGroup);
+    auto* outputGroup = new QGroupBox("Kernel output");
+    auto* outputLayout = new QVBoxLayout(outputGroup);
+    auto* output = new QPlainTextEdit;
+    output->setReadOnly(true);
+    output->setPlaceholderText("VPN client output will appear here...");
+    output->setMinimumHeight(150);
+    output->setStyleSheet(
+        "QPlainTextEdit { background: #080606; border: 1px solid #442020; "
+        "border-radius: 8px; padding: 8px; color: #e8caca; "
+        "font-family: monospace; font-size: 12px; }");
+    outputLayout->addWidget(output);
+    root->addWidget(outputGroup);
     // // end debugging output
     root->addStretch();
 
@@ -239,10 +239,10 @@ int main(int argc, char *argv[])
     {
         client->setProgram(clientBinary);
     }
-    // client->setProcessChannelMode(QProcess::MergedChannels);
-    // QObject::connect(client, &QProcess::readyReadStandardOutput, &window, [=]() {
-    //     output->appendPlainText(QString::fromLocal8Bit(client->readAllStandardOutput()));
-    // });
+    client->setProcessChannelMode(QProcess::MergedChannels);
+    QObject::connect(client, &QProcess::readyReadStandardOutput, &window, [=]() {
+        output->appendPlainText(QString::fromLocal8Bit(client->readAllStandardOutput()));
+    });
     // auto* geoLookup = new QProcess(&window);
     // location->setText("Geographic location\nLooking up...");
     // geoLookup->start("curl", {"--silent", "--max-time", "5", "https://ipapi.co/json/"});
