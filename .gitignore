@@ -3,4 +3,3 @@ vpn_server1
 client_app
 *.o
 build/
-CMakeLists.txt
