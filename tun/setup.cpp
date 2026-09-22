@@ -106,7 +106,6 @@ void reroute(const char* vpn_server_ip) {
     // make ip packets with destination other than vpn server go through tun0
     int status = system("sudo ip route add default dev tun0 metric 50");
     if( status <0){
-        cout<<"tun0 not default"<<endl;
         return ;
     }
 
@@ -127,8 +126,6 @@ void close_tun(){
 int up(){
     // makes tun0 active
     return system("sudo ip link set dev tun0 up");
-    cout<<"setted to up"<<endl;
-
 }
 
 int assign_ipaddress(const string & vpn_ip ){

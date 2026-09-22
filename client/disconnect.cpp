@@ -54,8 +54,6 @@ void sendDisconnectMessage(
         {perror("Failed to send packet");}
         else if (static_cast<size_t>(bytesSent) != encryptedPacket.size())
         {cerr << "Failed to send complete encrypted packet" << endl;}
-        else
-        {cout << "[TUN -> SERVER] Sent "<< bytesSent << " bytes" << endl;}
     }
 
     void receiveDisconnectMessage(
@@ -103,10 +101,8 @@ void sendDisconnectMessage(
         string message(plaintext.begin(), plaintext.end());
         if (message == "VPN_DISCONNECT")
         {
-            cout << "Received disconnect message from server." << endl;
             wipeX25519SharedSecret(sharedSecret);
             wipeSessionKeys(sessionKeys);
-            cout << "Wiped shared secret and session keys." << endl;
             close(sockfd);
             close_tun();
             exit(0);
@@ -134,7 +130,6 @@ void sendDisconnectMessage(
             sessionKeys,
             sharedSecret,
             receiveWindow);
-        cout << "Disconnected from server." << endl;
     }
 
    

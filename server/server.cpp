@@ -46,12 +46,6 @@ static string detect_external_iface() {
     string iface = run_and_capture(
         "ip route show default | awk '{for(i=1;i<=NF;i++) if ($i==\"dev\") print $(i+1)}' | head -n1");
 
-    if (iface.empty())
-        cout << "Warning: could not auto-detect external interface. "
-                "NAT/forwarding will not be configured automatically." << endl;
-    else
-        cout << "Detected external interface: " << iface << endl;
-
     return iface;
 }
 
@@ -98,8 +92,6 @@ static void setup_nat_forwarding(const string& extIface) {
     system(fwdIn6Cmd.c_str());
 
     g_natConfigured = true;
-    cout << "IP forwarding enabled and NAT rules configured (tun0 <-> "
-         << extIface << "), IPv4 and IPv6." << endl;
 }
 
 
@@ -129,7 +121,6 @@ static void teardown_nat_forwarding() {
 
     g_natConfigured = false;
 
-    cout << "NAT/forwarding rules removed." << endl;
 }
 
 static void handle_sigint(int) {
@@ -197,16 +188,12 @@ int main() {
         return 1;
     }
 
-    cout << "VPN Server listening on port 8080..." << endl;
-
     // 1. Create TUN interface
     int tun_fd = setup_server_tun();
     if (tun_fd < 0) {
         close(sockfd);
         return 1;
     }
-    cout << "Server tun0 interface created successfully." << endl;
-
     // 2. Start the multiplexing bridge
     startForwarding(sockfd, tun_fd);
 

@@ -384,27 +384,9 @@ bool handleHandshake(int sockfd, const char* buffer, int bytesReceived, sockaddr
         wipeX25519SharedSecret(existingClient->second.sharedSecret);
         wipeSessionKeys(existingClient->second.sessionKeys);
         existingClient->second = client;
-        cout << "VPN client session refreshed for " << vpnIP << endl;
     }
     if (!vpnIPv6.empty())
         vpn_ipv6_to_ipv4[vpnIPv6] = vpnIP;
-
-    cout << "New VPN client registered" << endl;
-    cout << "VPN IPv4 : " << vpnIP << endl;
-    cout << "VPN IPv6 : " << vpnIPv6 << endl;
-
-    char ip[INET_ADDRSTRLEN];
-
-    inet_ntop(
-        AF_INET,
-        &clientAddress.sin_addr,
-        ip,
-        sizeof(ip)
-    );
-
-    cout << "Real IP: " << ip
-         << ":" << ntohs(clientAddress.sin_port)
-         << endl;
 
     // Send assigned VPN IPs. Wire format: "VPN_IP <ipv4> <ipv6> <server-pubkey-hex>".
     string response =
@@ -420,8 +402,6 @@ bool handleHandshake(int sockfd, const char* buffer, int bytesReceived, sockaddr
         clientLength
     );
 
-    cout << "X25519 key agreement completed. Shared-secret fingerprint: "
-         << sharedSecretFingerprint(client.sharedSecret) << endl;
     wipeX25519PrivateKey(serverKeyPair);
 
     return true;
@@ -432,9 +412,6 @@ void startForwarding(int sockfd, int tun_fd)
     unsigned char buffer[kMaxVpnTunPacketBytes];
     sockaddr_in clientAddress{};
     socklen_t clientLength = sizeof(clientAddress);
-
-    cout << "encrypted tunnel bridge initialized." << endl;
-    cout << "Waiting for raw packets..." << endl;
 
     while (true)
     {
@@ -463,8 +440,6 @@ void startForwarding(int sockfd, int tun_fd)
 
             if (bytesReceived > 0)
             {
-                cout << "\n[CLIENT -> SERVER]" << endl;
-                
                 string message(
                     reinterpret_cast<const char*>(buffer),
                     bytesReceived);
@@ -554,7 +529,6 @@ void startForwarding(int sockfd, int tun_fd)
                             cerr << "Failed to encrypt disconnect confirmation" << endl;
                         }
 
-                        cout << "Client " << client->first << " disconnected." << endl;
                         vpn_ipv6_to_ipv4.erase(client->second.vpnIPv6);
                         vpn_ip.erase(client);
                         continue;
@@ -580,8 +554,6 @@ void startForwarding(int sockfd, int tun_fd)
 
             if (bytesRead > 0)
             {
-                cout << "\n[SERVER/TUN -> CLIENT]" << endl;
-
                 if (bytesRead < 1)
                 {
                     cerr << "Empty packet from TUN; dropping packet." << endl;

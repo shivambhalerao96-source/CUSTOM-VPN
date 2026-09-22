@@ -29,8 +29,6 @@ int main(int argc, char* argv[])
         return 1;
     }
 
-    cout << "UDP socket created successfully." << endl;
-
     sockaddr_in serverAddress{};// creates a structure which stores details about server
     serverAddress.sin_family = AF_INET;
     serverAddress.sin_port = htons(8080);
@@ -42,7 +40,6 @@ int main(int argc, char* argv[])
         close(sockfd);
         return 1;
     }
-    cout << "Connecting to VPN server at " << serverIp << ":8080..." << endl;
     if (inet_pton(AF_INET, serverIp, &serverAddress.sin_addr) != 1)
     {
         cerr << "Invalid VPN server IPv4 address: " << serverIp << endl;
@@ -51,7 +48,6 @@ int main(int argc, char* argv[])
     }
 
     // getting the vpn ip from the server and creating the tun interface with that ip
-    cout << "Sending handshake to server..." << endl;
     X25519KeyPair clientKeyPair;
     X25519SharedSecret sharedSecret{};
     SessionKeys sessionKeys{};
@@ -87,8 +83,6 @@ int main(int argc, char* argv[])
         wipeSessionKeys(sessionKeys);
         return 1;
     }
-
-    cout << "TUN interface created successfully." << endl;
 
     std::atomic<bool> stopRequested{false};
     SequenceNumberSender clientToServerSequence;

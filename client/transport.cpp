@@ -70,8 +70,6 @@ void tunToServer(
             perror("Failed to send packet");
         else if (static_cast<size_t>(bytesSent) != encryptedPacket.size())
             cerr << "Failed to send complete encrypted packet" << endl;
-        else
-            cout << "[TUN -> SERVER] Sent " << bytesSent << " bytes" << endl;
     }
 }
 
@@ -91,11 +89,7 @@ VpnAssignedAddresses receiveHandshake(
 
     const string message(buffer, bytesReceived);
     if (message == "VPN_FULL")
-    {
-        cout << "[CLIENT -> SERVER] Received handshake of " << bytesReceived
-             << " bytes; the server has reached its capacity" << endl;
         return {};
-    }
 
     const string prefix = "VPN_IP ";
     if (message.rfind(prefix, 0) != 0)
@@ -135,12 +129,6 @@ VpnAssignedAddresses receiveHandshake(
         return {};
     }
 
-    cout << "VPN IP received correctly!" << endl;
-    cout << "Assigned VPN IPv4: " << vpnIPv4 << endl;
-    cout << "Assigned VPN IPv6: " << vpnIPv6 << endl;
-    cout << "X25519 key agreement completed. Shared-secret fingerprint: "
-         << sharedSecretFingerprint(sharedSecret) << endl;
-
     return VpnAssignedAddresses{vpnIPv4, vpnIPv6};
 }
 
@@ -173,7 +161,6 @@ int sendHandshake(
         return -1;
     }
 
-    cout << "[CLIENT -> SERVER] Sent handshake acknowledgment of " << bytesSent << " bytes" << endl;
     return 0;
 }
 
@@ -221,7 +208,6 @@ void serverToTun(
 
         if (string(plaintext.begin(), plaintext.end()) == "VPN_DISCONNECT")
         {
-            cout << "Received disconnect confirmation from server." << endl;
             stopRequested.store(true);
             break;
         }
@@ -231,7 +217,5 @@ void serverToTun(
             perror("Failed to write packet to TUN");
         else if (static_cast<size_t>(bytesWritten) != plaintext.size())
             cerr << "Failed to write complete packet to TUN" << endl;
-        else
-            cout << "[SERVER -> TUN] Wrote " << bytesWritten << " bytes to TUN" << endl;
-    }
+}
 }
