@@ -2,6 +2,7 @@
 #define TRANSPORT_H
 
 #include <arpa/inet.h>
+#include <atomic>
 #include <string>
 #include "../crypto/handshake.h"
 #include "../crypto/session_keys.h"
@@ -22,12 +23,15 @@ void tunToServer(
     int sockfd,
     sockaddr_in serverAddress,
     const SessionKeys& sessionKeys,
+    std::atomic<bool>& stopRequested,
     SequenceNumberSender& sendSequence);
+
 VpnAssignedAddresses receiveHandshake(
     int sockfd,
     const X25519KeyPair& clientKeyPair,
     X25519SharedSecret& sharedSecret,
     SessionKeys& sessionKeys);
+
 int sendHandshake(
     int sockfd,
     sockaddr_in serverAddress,
@@ -37,6 +41,7 @@ void serverToTun(
     int tun_fd,
     int sockfd,
     const SessionKeys& sessionKeys,
+    std::atomic<bool>& stopRequested,
     ReplayWindow& receiveWindow);
 
 #endif

@@ -32,11 +32,13 @@ bool generateX25519KeyPair(X25519KeyPair& keyPair)
     if (!initializeCrypto())
         return false;
 
+        // generates the private key of client
     randombytes_buf(keyPair.privateKey.data(), keyPair.privateKey.size());
 
+    // generates the public key of the client derived from private key
     if (crypto_scalarmult_curve25519_base(
             keyPair.publicKey.data(), keyPair.privateKey.data()) != 0)
-    {
+    {// if key generation fails
         wipeX25519PrivateKey(keyPair);
         return false;
     }

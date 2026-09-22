@@ -80,7 +80,7 @@ static string detect_external_iface() {
     return iface;
 }
 
-void reroute(){
+void reroute(const char* vpn_server_ip) {
 
     string router= get_router_ip();// gets the router ip address
     string iface = detect_external_iface();
@@ -100,7 +100,7 @@ void reroute(){
     }
 
     // make ip packets with destination vpn server go through the physical interface
-    string cmd = string("sudo ip route add 35.226.148.101 via ") + router +
+    string cmd = string("sudo ip route add ")+vpn_server_ip+ string (" via ") + router +
                  " dev " + iface;
     system(cmd.c_str());
     // make ip packets with destination other than vpn server go through tun0
@@ -151,7 +151,10 @@ int assign_ipv6_address(const string & vpn_ipv6){
 //     return 0;
 // }
 
-int create_tun_interface(const string & vpn_ipv4, const string & vpn_ipv6) {
+int create_tun_interface(
+    const string& vpn_ipv4,
+    const string& vpn_ipv6,
+    const string& vpn_server_ip) {
 
     
 
@@ -188,6 +191,6 @@ if (!vpn_ipv6.empty() && assign_ipv6_address(vpn_ipv6) != 0) {
 }
 
 up();
-reroute();
+reroute(vpn_server_ip.c_str());
 return fd;
 }

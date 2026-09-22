@@ -4,3 +4,5 @@ client_app
 *.o
 replay.py
 server_app
+build/
+CMakeLists.txt

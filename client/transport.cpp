@@ -1,30 +1,37 @@
 #include "transport.h"
 #include "../crypto/packet_crypto.h"
 
+#include <arpa/inet.h>
+#include <sys/socket.h>
+#include <unistd.h>
+
 #include <iostream>
 #include <sstream>
 #include <vector>
-#include <unistd.h>
-#include <sys/socket.h>
-#include <sys/select.h>
-#include <arpa/inet.h>
 
 using namespace std;
+
 void tunToServer(
     int tun_fd,
     int sockfd,
     sockaddr_in serverAddress,
     const SessionKeys& sessionKeys,
+    std::atomic<bool>& stopRequested,
     SequenceNumberSender& sendSequence)
 {
     unsigned char buffer[65535];
 
-    while (true)
+    while (!stopRequested.load())
     {
-        int bytesRead = read(tun_fd, buffer, sizeof(buffer));
+        const int bytesRead = read(tun_fd, buffer, sizeof(buffer));
+        if (stopRequested.load())
+            break;
 
         if (bytesRead < 0)
-        { perror("Error reading packet");
+        {
+            if (stopRequested.load())
+                break;
+            perror("Error reading packet");
             continue;
         }
 
@@ -47,20 +54,20 @@ void tunToServer(
             continue;
         }
 
-        ssize_t bytesSent = sendto(
+        const ssize_t bytesSent = sendto(
             sockfd,
             encryptedPacket.data(),
             encryptedPacket.size(),
             0,
-            (sockaddr *)&serverAddress,
+            reinterpret_cast<sockaddr*>(&serverAddress),
             sizeof(serverAddress));
 
         if (bytesSent < 0)
-        {perror("Failed to send packet");}
+            perror("Failed to send packet");
         else if (static_cast<size_t>(bytesSent) != encryptedPacket.size())
-        {cerr << "Failed to send complete encrypted packet" << endl;}
+            cerr << "Failed to send complete encrypted packet" << endl;
         else
-        {cout << "[TUN -> SERVER] Sent "<< bytesSent << " bytes" << endl;}
+            cout << "[TUN -> SERVER] Sent " << bytesSent << " bytes" << endl;
     }
 }
 
@@ -71,93 +78,66 @@ VpnAssignedAddresses receiveHandshake(
     SessionKeys& sessionKeys)
 {
     char buffer[65535];
-
-    fd_set readfds;
-    FD_ZERO(&readfds);
-    FD_SET(sockfd, &readfds);
-
-    timeval timeout{};
-    timeout.tv_sec = 10;
-
-    int ready = select(sockfd + 1, &readfds, nullptr, nullptr, &timeout);
-    if (ready < 0)
-    {
-        perror("Failed while waiting for handshake response");
-        return {};
-    }
-    if (ready == 0)
-    {
-        cerr << "Timed out waiting for the VPN server handshake response" << endl;
-        return {};
-    }
-
-    int bytesReceived = recvfrom(sockfd,buffer, sizeof(buffer), 0,nullptr,nullptr);
+    const int bytesReceived = recvfrom(sockfd, buffer, sizeof(buffer), 0, nullptr, nullptr);
     if (bytesReceived < 0)
     {
         perror("Failed to receive handshake");
         return {};
     }
 
-    string message(buffer, bytesReceived);
-
+    const string message(buffer, bytesReceived);
     if (message == "VPN_FULL")
     {
-        cout << "[CLIENT -> SERVER] Received handshake of " << bytesReceived << " bytes the server has reached its capacity" << endl;
+        cout << "[CLIENT -> SERVER] Received handshake of " << bytesReceived
+             << " bytes; the server has reached its capacity" << endl;
         return {};
     }
 
     const string prefix = "VPN_IP ";
-    if (message.rfind(prefix, 0) == 0)
+    if (message.rfind(prefix, 0) != 0)
+        return {};
+
+    istringstream fieldStream(message.substr(prefix.size()));
+    string vpnIPv4;
+    string vpnIPv6;
+    string serverPublicKeyText;
+
+    if (!(fieldStream >> vpnIPv4 >> vpnIPv6 >> serverPublicKeyText))
     {
-        // Wire format is now "VPN_IP <ipv4> <ipv6> <server-pubkey-hex>".
-        // Tokenizing on whitespace instead of the old single find(' ')
-        // split lets us add the IPv6 field without disturbing anything
-        // else about the handshake.
-        istringstream fieldStream(message.substr(prefix.size()));
-        string vpnIPv4;
-        string vpnIPv6;
-        string serverPublicKeyText;
+        cerr << "Invalid server key-exchange response" << endl;
+        return {};
+    }
 
-        if (!(fieldStream >> vpnIPv4 >> vpnIPv6 >> serverPublicKeyText))
-        {
-            cerr << "Invalid server key-exchange response" << endl;
-            return {};
-        }
+    X25519PublicKey serverPublicKey{};
+    if (!decodeX25519PublicKey(serverPublicKeyText, serverPublicKey))
+    {
+        cerr << "Invalid server X25519 public key" << endl;
+        return {};
+    }
 
-        X25519PublicKey serverPublicKey{};
+    if (!deriveX25519SharedSecret(
+            sharedSecret,
+            clientKeyPair.privateKey,
+            serverPublicKey))
+    {
+        cerr << "Failed to derive the X25519 shared secret" << endl;
+        return {};
+    }
 
-        if (!decodeX25519PublicKey(serverPublicKeyText, serverPublicKey))
-        {
-            cerr << "Invalid server X25519 public key" << endl;
-            return {};
-        }
+    if (!deriveSessionKeys(sessionKeys, sharedSecret))
+    {
+        cerr << "Failed to derive session keys" << endl;
+        wipeX25519SharedSecret(sharedSecret);
+        return {};
+    }
 
-        if (!deriveX25519SharedSecret(
-                sharedSecret,
-                clientKeyPair.privateKey,
-                serverPublicKey))
-        {
-            cerr << "Failed to derive the X25519 shared secret" << endl;
-            return {};
-        }
+    cout << "VPN IP received correctly!" << endl;
+    cout << "Assigned VPN IPv4: " << vpnIPv4 << endl;
+    cout << "Assigned VPN IPv6: " << vpnIPv6 << endl;
+    cout << "X25519 key agreement completed. Shared-secret fingerprint: "
+         << sharedSecretFingerprint(sharedSecret) << endl;
 
-        if (!deriveSessionKeys(sessionKeys, sharedSecret))
-        {
-            cerr << "Failed to derive session keys" << endl;
-            wipeX25519SharedSecret(sharedSecret);
-            return {};
-        }
-
-        cout << "VPN IP received correctly!" << std::endl;
-        cout << "Assigned VPN IPv4: " << vpnIPv4 << endl;
-        cout << "Assigned VPN IPv6: " << vpnIPv6 << endl;
-        cout << "X25519 key agreement completed. Shared-secret fingerprint: "
-             << sharedSecretFingerprint(sharedSecret) << endl;
-
-        return VpnAssignedAddresses{vpnIPv4, vpnIPv6};
-
-    } 
-    return {};
+    return VpnAssignedAddresses{vpnIPv4, vpnIPv6};
 }
 
 int sendHandshake(
@@ -171,10 +151,16 @@ int sendHandshake(
         return -1;
     }
 
-    string response =
+    const string response =
         "VPN_HELLO " + encodeX25519PublicKey(clientKeyPair.publicKey);
 
-    int bytesSent = sendto(sockfd, response.c_str(), response.size(), 0, (sockaddr*)&serverAddress, sizeof(serverAddress));
+    const int bytesSent = sendto(
+        sockfd,
+        response.c_str(),
+        response.size(),
+        0,
+        reinterpret_cast<const sockaddr*>(&serverAddress),
+        sizeof(serverAddress));
 
     if (bytesSent < 0)
     {
@@ -182,27 +168,30 @@ int sendHandshake(
         wipeX25519PrivateKey(clientKeyPair);
         return -1;
     }
-    else
-    {
-        cout << "[SERVER -> CLIENT] Sent handshake acknowledgment of " << bytesSent << " bytes" << endl;
-    }
+
+    cout << "[CLIENT -> SERVER] Sent handshake acknowledgment of " << bytesSent << " bytes" << endl;
     return 0;
 }
-
 
 void serverToTun(
     int tun_fd,
     int sockfd,
     const SessionKeys& sessionKeys,
+    std::atomic<bool>& stopRequested,
     ReplayWindow& receiveWindow)
 {
     unsigned char buffer[kMaxVpnTunPacketBytes];
 
-    while (true)
+    while (!stopRequested.load())
     {
-        int bytesReceived = recvfrom(sockfd,buffer, sizeof(buffer), 0,nullptr,nullptr);
+        const int bytesReceived = recvfrom(sockfd, buffer, sizeof(buffer), 0, nullptr, nullptr);
+        if (stopRequested.load())
+            break;
+
         if (bytesReceived < 0)
         {
+            if (stopRequested.load())
+                break;
             perror("Failed to receive packet");
             continue;
         }
@@ -220,19 +209,25 @@ void serverToTun(
             continue;
         }
 
+        if (string(plaintext.begin(), plaintext.end()) == "VPN_DISCONNECT")
+        {
+            cout << "Received disconnect confirmation from server." << endl;
+            stopRequested.store(true);
+            break;
+        }
+
         if (!receiveWindow.accept(sequence))
         {
             cerr << "Server-to-client replay detected; dropping packet" << endl;
             continue;
         }
 
-        ssize_t bytesWritten = write(tun_fd, plaintext.data(), plaintext.size());
-
+        const ssize_t bytesWritten = write(tun_fd, plaintext.data(), plaintext.size());
         if (bytesWritten < 0)
-        {perror("Failed to write packet to TUN");}
+            perror("Failed to write packet to TUN");
         else if (static_cast<size_t>(bytesWritten) != plaintext.size())
-        {cerr << "Failed to write complete packet to TUN" << endl;}
+            cerr << "Failed to write complete packet to TUN" << endl;
         else
-        {cout << "[SERVER -> TUN] Wrote "<< bytesWritten<< " bytes to TUN" << endl;}
+            cout << "[SERVER -> TUN] Wrote " << bytesWritten << " bytes to TUN" << endl;
     }
 }

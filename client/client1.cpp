@@ -1,4 +1,5 @@
 #include <iostream>
+#include <atomic>
 #include <thread>
 #include <functional>
 #include <sys/socket.h>
@@ -7,10 +8,11 @@
 
 #include "../tun/setup.h"
 #include "transport.h"
+#include "disconnect.h"
 
 using namespace std;
 
-int main()
+int main(int argc, char* argv[])
 {
     if (!initializeCrypto())
     {
@@ -28,13 +30,21 @@ int main()
 
     cout << "UDP socket created successfully." << endl;
 
-    sockaddr_in serverAddress{};
+    sockaddr_in serverAddress{};// creates a structure which stores details about server
     serverAddress.sin_family = AF_INET;
     serverAddress.sin_port = htons(8080);
 
-    if (inet_pton(AF_INET, "35.226.148.101", &serverAddress.sin_addr) != 1)
+    const char* serverIp = argc > 1 ? argv[1] : "";
+    //serverIp= "35.226.148.101"; // hardcoded for testing
+    if( serverIp[0] == '\0') {
+        cerr << "Please provide the VPN server IPv4 address as a command-line argument." << endl;
+        close(sockfd);
+        return 1;
+    }
+    cout << "Connecting to VPN server at " << serverIp << ":8080..." << endl;
+    if (inet_pton(AF_INET, serverIp, &serverAddress.sin_addr) != 1)
     {
-        cerr << "Invalid VPN server IPv4 address" << endl;
+        cerr << "Invalid VPN server IPv4 address: " << serverIp << endl;
         close(sockfd);
         return 1;
     }
@@ -64,7 +74,10 @@ int main()
         wipeSessionKeys(sessionKeys);
         return 1;
     }
-    int tun_fd = create_tun_interface(assignedAddresses.ipv4, assignedAddresses.ipv6);
+    int tun_fd = create_tun_interface(
+        assignedAddresses.ipv4,
+        assignedAddresses.ipv6,
+        serverIp);
 
     if (tun_fd < 0)
     {
@@ -76,6 +89,7 @@ int main()
 
     cout << "TUN interface created successfully." << endl;
 
+    std::atomic<bool> stopRequested{false};
     SequenceNumberSender clientToServerSequence;
     ReplayWindow serverToClientReplay;
 
@@ -85,21 +99,44 @@ int main()
         sockfd,
         serverAddress,
         cref(sessionKeys),
+        ref(stopRequested),
         ref(clientToServerSequence));
     thread receiver(
         serverToTun,
         tun_fd,
         sockfd,
         cref(sessionKeys),
+        ref(stopRequested),
         ref(serverToClientReplay));
+
+    thread control([&]() {
+        string command;
+        while (!stopRequested.load())
+        {
+            if (!getline(cin, command))
+                break;
+
+            if (command == "disconnect")
+            {
+                sendDisconnectMessage(sockfd, serverAddress, sessionKeys);
+                stopRequested.store(true);
+                shutdown(sockfd, SHUT_RDWR);
+                close(sockfd);
+                close(tun_fd);
+                break;
+            }
+        }
+    });
 
     sender.join();
     receiver.join();
+    control.join();
 
     wipeX25519SharedSecret(sharedSecret);
     wipeSessionKeys(sessionKeys);
-    
-    close(sockfd);
+
+    if (sockfd >= 0)
+        close(sockfd);
 
     return 0;
 }
