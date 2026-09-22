@@ -17,7 +17,8 @@ void tunToServer(
     sockaddr_in serverAddress,
     const SessionKeys& sessionKeys,
     std::atomic<bool>& stopRequested,
-    SequenceNumberSender& sendSequence)
+    SequenceNumberSender& sendSequence,
+    std::mutex& sequenceMutex)
 {
     unsigned char buffer[65535];
 
@@ -36,10 +37,13 @@ void tunToServer(
         }
 
         uint64_t sequence = 0;
-        if (!sendSequence.nextSequence(sequence))
         {
-            cerr << "Client-to-server sequence space exhausted; dropping packet" << endl;
-            continue;
+            lock_guard<mutex> lock(sequenceMutex);
+            if (!sendSequence.nextSequence(sequence))
+            {
+                cerr << "Client-to-server sequence space exhausted; dropping packet" << endl;
+                continue;
+            }
         }
 
         vector<unsigned char> encryptedPacket;
@@ -209,17 +213,17 @@ void serverToTun(
             continue;
         }
 
+        if (!receiveWindow.accept(sequence))
+        {
+            cerr << "Server-to-client replay detected; dropping packet" << endl;
+            continue;
+        }
+
         if (string(plaintext.begin(), plaintext.end()) == "VPN_DISCONNECT")
         {
             cout << "Received disconnect confirmation from server." << endl;
             stopRequested.store(true);
             break;
-        }
-
-        if (!receiveWindow.accept(sequence))
-        {
-            cerr << "Server-to-client replay detected; dropping packet" << endl;
-            continue;
         }
 
         const ssize_t bytesWritten = write(tun_fd, plaintext.data(), plaintext.size());

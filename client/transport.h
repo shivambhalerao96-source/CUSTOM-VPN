@@ -3,6 +3,7 @@
 
 #include <arpa/inet.h>
 #include <atomic>
+#include <mutex>
 #include <string>
 #include "../crypto/handshake.h"
 #include "../crypto/session_keys.h"
@@ -24,7 +25,8 @@ void tunToServer(
     sockaddr_in serverAddress,
     const SessionKeys& sessionKeys,
     std::atomic<bool>& stopRequested,
-    SequenceNumberSender& sendSequence);
+    SequenceNumberSender& sendSequence,
+    std::mutex& sequenceMutex);
 
 VpnAssignedAddresses receiveHandshake(
     int sockfd,

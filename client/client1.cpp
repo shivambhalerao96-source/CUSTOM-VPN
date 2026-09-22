@@ -2,6 +2,7 @@
 #include <atomic>
 #include <thread>
 #include <functional>
+#include <mutex>
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <unistd.h>
@@ -91,6 +92,7 @@ int main(int argc, char* argv[])
 
     std::atomic<bool> stopRequested{false};
     SequenceNumberSender clientToServerSequence;
+    std::mutex clientToServerSequenceMutex;
     ReplayWindow serverToClientReplay;
 
     thread sender(
@@ -100,7 +102,8 @@ int main(int argc, char* argv[])
         serverAddress,
         cref(sessionKeys),
         ref(stopRequested),
-        ref(clientToServerSequence));
+        ref(clientToServerSequence),
+        ref(clientToServerSequenceMutex));
     thread receiver(
         serverToTun,
         tun_fd,
@@ -118,7 +121,12 @@ int main(int argc, char* argv[])
 
             if (command == "disconnect")
             {
-                sendDisconnectMessage(sockfd, serverAddress, sessionKeys);
+                sendDisconnectMessage(
+                    sockfd,
+                    serverAddress,
+                    sessionKeys,
+                    clientToServerSequence,
+                    clientToServerSequenceMutex);
                 stopRequested.store(true);
                 shutdown(sockfd, SHUT_RDWR);
                 close(sockfd);
