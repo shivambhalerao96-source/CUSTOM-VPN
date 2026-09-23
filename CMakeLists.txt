@@ -68,11 +68,14 @@ target_include_directories(vpn_server PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/server
 
 option(BUILD_FRONTEND "Build the Qt frontend application" ON)
 if(BUILD_FRONTEND)
-    find_package(QT NAMES Qt6 Qt5 COMPONENTS Widgets REQUIRED)
-    find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Widgets REQUIRED)
+    find_package(QT NAMES Qt6 Qt5 COMPONENTS Widgets Network REQUIRED)
+    find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Widgets Network REQUIRED)
 
     add_executable(vpn_frontend frontend/app.cpp)
-    target_link_libraries(vpn_frontend PRIVATE Qt${QT_VERSION_MAJOR}::Widgets)
+    target_link_libraries(vpn_frontend PRIVATE
+        Qt${QT_VERSION_MAJOR}::Widgets
+        Qt${QT_VERSION_MAJOR}::Network
+    )
     set_target_properties(vpn_frontend PROPERTIES
         AUTOMOC ON
         AUTOUIC ON

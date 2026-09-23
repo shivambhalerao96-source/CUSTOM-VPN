@@ -2,6 +2,7 @@
 #include <QComboBox>
 #include <QCoreApplication>
 #include <QDir>
+#include <QElapsedTimer>
 #include <QGridLayout>
 #include <QGraphicsDropShadowEffect>
 #include <QGraphicsOpacityEffect>
@@ -10,10 +11,15 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QLabel>
+#include <QNetworkAccessManager>
+#include <QNetworkDiskCache>
+#include <QNetworkReply>
+#include <QNetworkRequest>
+#include <QPainter>
 #include <QPropertyAnimation>
 #include <QProcess>
-#include <QPlainTextEdit>
 #include <QPushButton>
+#include <QStandardPaths>
 #include <QTimer>
 #include <QVBoxLayout>
 #include <QWidget>
@@ -22,6 +28,7 @@
 #include <ifaddrs.h>
 #include <netinet/in.h>
 #include <cstdio>
+#include <cmath>
 #include <fstream>
 #include <sstream>
 
@@ -98,6 +105,174 @@ quint64 interfaceBytes()
     return total;
 }
 
+class LocationMapWidget final : public QWidget
+{
+public:
+    explicit LocationMapWidget(QWidget* parent = nullptr)
+        : QWidget(parent), m_tileNetwork(this)
+    {
+        setMinimumSize(300, 210);
+        setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+
+        auto* cache = new QNetworkDiskCache(this);
+        const QString cachePath = QStandardPaths::writableLocation(
+            QStandardPaths::CacheLocation) + QStringLiteral("/custom-vpn-map");
+        QDir().mkpath(cachePath);
+        cache->setCacheDirectory(cachePath);
+        cache->setMaximumCacheSize(64 * 1024 * 1024);
+        m_tileNetwork.setCache(cache);
+    }
+
+    void setLoading()
+    {
+        m_hasLocation = false;
+        m_message = QStringLiteral("Finding your location...");
+        update();
+    }
+
+    void setUnavailable(const QString& reason = QStringLiteral("Location unavailable"))
+    {
+        m_hasLocation = false;
+        m_message = reason;
+        update();
+    }
+
+    void setLocation(double latitude, double longitude, const QString& place)
+    {
+        if (!std::isfinite(latitude) || !std::isfinite(longitude) ||
+            latitude < -85.0511 || latitude > 85.0511 ||
+            longitude < -180.0 || longitude > 180.0)
+        {
+            setUnavailable();
+            return;
+        }
+
+        constexpr double pi = 3.14159265358979323846;
+        const double scale = static_cast<double>(1 << m_zoom);
+        m_centerWorldX = (longitude + 180.0) / 360.0 * scale * kTileSize;
+        const double latitudeRadians = latitude * pi / 180.0;
+        m_centerWorldY = (1.0 - std::asinh(std::tan(latitudeRadians)) / pi) /
+                         2.0 * scale * kTileSize;
+        m_place = place.isEmpty() ? QStringLiteral("Unknown location") : place;
+        m_hasLocation = true;
+        m_message.clear();
+        requestTiles();
+        update();
+    }
+
+protected:
+    void paintEvent(QPaintEvent*) override
+    {
+        QPainter painter(this);
+        painter.setRenderHint(QPainter::SmoothPixmapTransform);
+        painter.fillRect(rect(), QColor(QStringLiteral("#e7e1d5")));
+
+        if (!m_hasLocation)
+        {
+            painter.setPen(QColor(QStringLiteral("#c7a4a4")));
+            painter.drawText(rect(), Qt::AlignCenter, m_message);
+            return;
+        }
+
+        const double left = m_centerWorldX - width() / 2.0;
+        const double top = m_centerWorldY - height() / 2.0;
+        for (int tileX = m_firstTileX; tileX <= m_firstTileX + 2; ++tileX)
+        {
+            for (int tileY = m_firstTileY; tileY <= m_firstTileY + 2; ++tileY)
+            {
+                const auto tile = m_tiles.constFind(tileKey(tileX, tileY));
+                if (tile == m_tiles.constEnd())
+                    continue;
+
+                const QRectF target(tileX * kTileSize - left,
+                                    tileY * kTileSize - top,
+                                    kTileSize,
+                                    kTileSize);
+                painter.drawImage(target, tile.value());
+            }
+        }
+
+        // A small marker at the center keeps the map useful even when the
+        // provider's raster tile has no marker layer of its own.
+        const QPointF marker(width() / 2.0, height() / 2.0);
+        painter.setPen(QPen(Qt::white, 2));
+        painter.setBrush(QColor(QStringLiteral("#d23838")));
+        painter.drawEllipse(marker, 7, 7);
+
+        painter.setPen(Qt::white);
+        painter.setBrush(QColor(0, 0, 0, 165));
+        const QRectF placeBackground(8, 8, qMin(width() - 16, 260), 28);
+        painter.drawRoundedRect(placeBackground, 6, 6);
+        painter.drawText(placeBackground.adjusted(10, 0, -10, 0),
+                         Qt::AlignVCenter | Qt::AlignLeft, m_place);
+
+        painter.setPen(QColor(QStringLiteral("#252525")));
+        painter.setBrush(QColor(255, 255, 255, 220));
+        const QRectF attribution(width() - 190, height() - 24, 182, 18);
+        painter.drawRect(attribution);
+        painter.drawText(attribution, Qt::AlignCenter,
+                         QStringLiteral("© OpenStreetMap contributors"));
+    }
+
+private:
+    static constexpr int kTileSize = 256;
+    static constexpr int m_zoom = 5;
+
+    static QString tileKey(int x, int y)
+    {
+        return QString::number(x) + QLatin1Char(':') + QString::number(y);
+    }
+
+    void requestTiles()
+    {
+        const int tileCount = 1 << m_zoom;
+        m_firstTileX = static_cast<int>(std::floor(m_centerWorldX / kTileSize)) - 1;
+        m_firstTileY = static_cast<int>(std::floor(m_centerWorldY / kTileSize)) - 1;
+        m_tiles.clear();
+
+        for (int tileX = m_firstTileX; tileX <= m_firstTileX + 2; ++tileX)
+        {
+            for (int tileY = m_firstTileY; tileY <= m_firstTileY + 2; ++tileY)
+            {
+                if (tileY < 0 || tileY >= tileCount)
+                    continue;
+
+                const int wrappedX = ((tileX % tileCount) + tileCount) % tileCount;
+                const QUrl url(QStringLiteral("https://tile.openstreetmap.org/%1/%2/%3.png")
+                                   .arg(m_zoom)
+                                   .arg(wrappedX)
+                                   .arg(tileY));
+                QNetworkRequest request(url);
+                request.setHeader(QNetworkRequest::UserAgentHeader,
+                                  QStringLiteral("CustomVPN/1.0"));
+                QNetworkReply* reply = m_tileNetwork.get(request);
+                const QString key = tileKey(tileX, tileY);
+                QObject::connect(reply, &QNetworkReply::finished, this,
+                                 [this, reply, key]() {
+                    if (reply->error() == QNetworkReply::NoError)
+                    {
+                        const QImage image = QImage::fromData(reply->readAll());
+                        if (!image.isNull())
+                            m_tiles.insert(key, image);
+                    }
+                    reply->deleteLater();
+                    update();
+                });
+            }
+        }
+    }
+
+    QNetworkAccessManager m_tileNetwork;
+    QHash<QString, QImage> m_tiles;
+    double m_centerWorldX = 0.0;
+    double m_centerWorldY = 0.0;
+    int m_firstTileX = 0;
+    int m_firstTileY = 0;
+    QString m_place;
+    QString m_message = QStringLiteral("Finding your location...");
+    bool m_hasLocation = false;
+};
+
 }
 
 int main(int argc, char *argv[])
@@ -107,7 +282,7 @@ int main(int argc, char *argv[])
     QWidget window;
 
     window.setWindowTitle("Custom VPN");
-    window.resize(820, 680);
+    window.resize(820, 760);
     window.setStyleSheet(R"(
         QWidget { background: #050505; color: #f5eeee; font-family: "DejaVu Sans"; }
         QLabel#eyebrow { color: #e05252; font-size: 11px; font-weight: 700; letter-spacing: 2px; }
@@ -180,24 +355,14 @@ int main(int argc, char *argv[])
     };
     auto* speed = addMetric("Internet speed", 0, 0);
     auto* ipv4 = addMetric("IPv4 address", 0, 1);
-    auto* location = addMetric("Geographic location", 1, 0);
+    auto* locationMap = new LocationMapWidget;
+    locationMap->setObjectName("locationMap");
+    metrics->addWidget(locationMap, 1, 0);
     auto* status = addMetric("VPN status", 1, 1);
+    metrics->setColumnStretch(0, 1);
+    metrics->setColumnStretch(1, 1);
+    metrics->setRowStretch(1, 1);
     root->addWidget(dashboard);
-    // // debugging output for kernel messages and client logs
-
-    auto* outputGroup = new QGroupBox("Kernel output");
-    auto* outputLayout = new QVBoxLayout(outputGroup);
-    auto* output = new QPlainTextEdit;
-    output->setReadOnly(true);
-    output->setPlaceholderText("VPN client output will appear here...");
-    output->setMinimumHeight(150);
-    output->setStyleSheet(
-        "QPlainTextEdit { background: #080606; border: 1px solid #442020; "
-        "border-radius: 8px; padding: 8px; color: #e8caca; "
-        "font-family: monospace; font-size: 12px; }");
-    outputLayout->addWidget(output);
-    root->addWidget(outputGroup);
-    // // end debugging output
     root->addStretch();
 
     auto addShadow = [](QWidget* widget, const QColor& color, int blurRadius) {
@@ -221,9 +386,20 @@ int main(int argc, char *argv[])
     dashboardIntro->start(QAbstractAnimation::DeleteWhenStopped);
 
     auto* refreshMetrics = new QTimer(&window);
-    QObject::connect(refreshMetrics, &QTimer::timeout, &window, [=]() {
-        const auto bytes = interfaceBytes();
-        speed->setText(QStringLiteral("Internet speed\n%1 KiB/s").arg(bytes / 1024));
+    quint64 previousBytes = interfaceBytes();
+    QElapsedTimer speedClock;
+    speedClock.start();
+    QObject::connect(refreshMetrics, &QTimer::timeout, &window, [=, &previousBytes, &speedClock]() {
+        const quint64 bytes = interfaceBytes();
+        const qint64 elapsedMs = speedClock.elapsed();
+        const quint64 delta = bytes >= previousBytes ? bytes - previousBytes : 0;
+        const double speedKiB = elapsedMs > 0
+            ? static_cast<double>(delta) * 1000.0 / elapsedMs / 1024.0
+            : 0.0;
+        previousBytes = bytes;
+        speedClock.restart();
+        speed->setText(QStringLiteral("Internet speed\n%1 KiB/s")
+                           .arg(speedKiB, 0, 'f', 1));
         ipv4->setText(QStringLiteral("IPv4 address\n%1").arg(localIpv4Address()));
     });
 
@@ -241,26 +417,47 @@ int main(int argc, char *argv[])
     }
     client->setProcessChannelMode(QProcess::MergedChannels);
     QObject::connect(client, &QProcess::readyReadStandardOutput, &window, [=]() {
-        output->appendPlainText(QString::fromLocal8Bit(client->readAllStandardOutput()));
+        // Drain client output so a verbose VPN process cannot block on a full
+        // pipe now that the debug output panel is intentionally not shown.
+        client->readAllStandardOutput();
     });
-    // auto* geoLookup = new QProcess(&window);
-    // location->setText("Geographic location\nLooking up...");
-    // geoLookup->start("curl", {"--silent", "--max-time", "5", "https://ipapi.co/json/"});
-    // QObject::connect(geoLookup, &QProcess::finished, &window,
-    //                  [=](int, QProcess::ExitStatus) {
-    //     const QJsonObject data = QJsonDocument::fromJson(geoLookup->readAllStandardOutput())
-    //                                  .object();
-    //     const QString city = data.value("city").toString();
-    //     const QString country = data.value("country_name").toString();
-    //     const QString place = city.isEmpty() || country.isEmpty()
-    //         ? QStringLiteral("Unavailable")
-    //         : city + ", " + country;
-    //     location->setText("Not implemented yet");
-    // });
-    location->setText("Location Not implemented yet");
+
+    locationMap->setLoading();
+    auto* geoLookup = new QNetworkAccessManager(&window);
+    QNetworkRequest geoRequest(QUrl(QStringLiteral("https://ipapi.co/json/")));
+    geoRequest.setHeader(QNetworkRequest::UserAgentHeader,
+                         QStringLiteral("CustomVPN/1.0"));
+    QNetworkReply* geoReply = geoLookup->get(geoRequest);
+    QObject::connect(geoReply, &QNetworkReply::finished, &window, [=]() {
+        if (geoReply->error() != QNetworkReply::NoError)
+        {
+            locationMap->setUnavailable();
+            geoReply->deleteLater();
+            return;
+        }
+
+        const QJsonDocument document = QJsonDocument::fromJson(geoReply->readAll());
+        const QJsonObject data = document.object();
+        const QJsonValue latitudeValue = data.value(QStringLiteral("latitude"));
+        const QJsonValue longitudeValue = data.value(QStringLiteral("longitude"));
+        if (!latitudeValue.isDouble() || !longitudeValue.isDouble())
+        {
+            locationMap->setUnavailable();
+            geoReply->deleteLater();
+            return;
+        }
+
+        const QString city = data.value(QStringLiteral("city")).toString();
+        const QString country = data.value(QStringLiteral("country_name")).toString();
+        const QString place = city.isEmpty() || country.isEmpty()
+            ? country
+            : city + QStringLiteral(", ") + country;
+        locationMap->setLocation(latitudeValue.toDouble(), longitudeValue.toDouble(), place);
+        geoReply->deleteLater();
+    });
     speed->setText(QStringLiteral("Internet speed\n--"));
     ipv4->setText(QStringLiteral("IPv4 address\n%1").arg(localIpv4Address()));
-    //refreshMetrics->start(1000);
+    refreshMetrics->start(1000);
 
     QObject::connect(runButton, &QPushButton::clicked, &window, [=, &selectedServerIp]() {
         if (client->state() != QProcess::NotRunning)
