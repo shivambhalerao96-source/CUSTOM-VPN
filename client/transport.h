@@ -17,6 +17,8 @@ struct VpnAssignedAddresses
 {
     string ipv4;
     string ipv6;
+    int activeClients = -1;
+    int clientCapacity = -1;
 };
 
 void tunToServer(

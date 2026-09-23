@@ -39,6 +39,7 @@ struct ClientInfo {
 };
 
 unordered_map<string, ClientInfo> vpn_ip;// maps the vpn_ip to client info 
+static constexpr int kServerClientCapacity = 253;
 
 // Maps a client's VPN IPv6 address back to the VPN IPv4 address used as the
 // key in vpn_ip above. This keeps ClientInfo (and its secret-wiping
@@ -388,10 +389,14 @@ bool handleHandshake(int sockfd, const char* buffer, int bytesReceived, sockaddr
     if (!vpnIPv6.empty())
         vpn_ipv6_to_ipv4[vpnIPv6] = vpnIP;
 
-    // Send assigned VPN IPs. Wire format: "VPN_IP <ipv4> <ipv6> <server-pubkey-hex>".
+    // The optional load suffix is backward-compatible with older clients.
+    // It reports active VPN sessions, which is the load signal available from
+    // the existing server state without adding a separate status endpoint.
+    // Wire format: "VPN_IP <ipv4> <ipv6> <server-pubkey-hex> VPN_LOAD <active> <capacity>".
     string response =
         "VPN_IP " + vpnIP + " " + vpnIPv6 + " " +
-        encodeX25519PublicKey(serverKeyPair.publicKey);
+        encodeX25519PublicKey(serverKeyPair.publicKey) + " VPN_LOAD " +
+        to_string(vpn_ip.size()) + " " + to_string(kServerClientCapacity);
 
     sendto(
         sockfd,

@@ -106,6 +106,17 @@ VpnAssignedAddresses receiveHandshake(
         return {};
     }
 
+    int activeClients = -1;
+    int clientCapacity = -1;
+    string loadTag;
+    if (fieldStream >> loadTag >> activeClients >> clientCapacity &&
+        (loadTag != "VPN_LOAD" || activeClients < 0 || clientCapacity <= 0 ||
+         activeClients > clientCapacity))
+    {
+        activeClients = -1;
+        clientCapacity = -1;
+    }
+
     X25519PublicKey serverPublicKey{};
     if (!decodeX25519PublicKey(serverPublicKeyText, serverPublicKey))
     {
@@ -129,7 +140,7 @@ VpnAssignedAddresses receiveHandshake(
         return {};
     }
 
-    return VpnAssignedAddresses{vpnIPv4, vpnIPv6};
+    return VpnAssignedAddresses{vpnIPv4, vpnIPv6, activeClients, clientCapacity};
 }
 
 int sendHandshake(

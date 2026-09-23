@@ -84,6 +84,13 @@ int main(int argc, char* argv[])
         return 1;
     }
 
+    if (assignedAddresses.activeClients >= 0 && assignedAddresses.clientCapacity > 0)
+    {
+        cout << "VPN_LOAD " << assignedAddresses.activeClients << ' '
+             << assignedAddresses.clientCapacity << endl;
+    }
+    cout << "VPN_CONNECTED" << endl;
+
     std::atomic<bool> stopRequested{false};
     SequenceNumberSender clientToServerSequence;
     std::mutex clientToServerSequenceMutex;
