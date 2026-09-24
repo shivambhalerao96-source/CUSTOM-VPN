@@ -1,93 +1,212 @@
 # CUSTOM-VPN
 
-A VPN built from scratch under the guidance of ProjectX.
+A custom VPN implementation built from scratch, with a focus on a minimal TUN-based architecture, UDP transport, and Libsodium-backed crypto.
 
-## Current cryptographic layers
+## High-level architecture
+
+This project is structured as a small VPN system with three main runtime parts:
+
+1. Client side
+   - creates a TUN interface for routing local traffic;
+   - performs the UDP handshake with the VPN server;
+   - encrypts and decrypts packets using per-session keys;
+   - sends packets from TUN into the server and writes packets from the server back into TUN.
+
+2. Server side
+   - binds a UDP socket and accepts client connections;
+   - allocates virtual IP addresses;
+   - derives per-client session keys from the X25519 shared secret;
+   - receives encrypted packets from clients, decrypts them, and forwards traffic to the real network or to the target host;
+   - manages NAT/forwarding rules so VPN traffic can leave the host.
+
+3. Shared crypto and networking core
+   - X25519 key exchange and session key derivation;
+   - packet encryption/decryption and replay protection;
+   - TUN interface setup and routing utilities.
+
+The project is split into logical subsystems, which are reflected in the directory structure:
+
+- `client/` — client startup, handshake, transport threads, disconnect flow
+- `server/` — server entry point and packet forwarding logic
+- `crypto/` — handshake, session keys, AEAD packet crypto, replay protection
+- `tun/` — Linux TUN interface creation and setup
+- `frontend/` — Qt-based UI shell
+- `docs/` — layer-by-layer protocol and security notes
+- `tests/` — layer-specific validation tests
+
+## Runtime flow
+
+### 1. Client starts the connection
+
+The client creates a TUN interface and starts a UDP connection to the VPN server. It also prepares the encryption keys needed for the session.
+
+Once the server accepts the connection, the client is assigned a VPN IP address and the tunnel is ready to carry traffic.
+
+### 2. Data is captured from the system
+
+The operating system sends regular network traffic into the TUN interface. This is where the VPN takes over the traffic before it leaves the machine.
+
+The client reads that traffic, encrypts it using the session keys, and sends it to the server over UDP.
+
+### 3. Server receives and forwards traffic
+
+The server receives the encrypted UDP packets, decrypts them, and forwards the traffic to the correct destination on the real network.
+
+When the response comes back, the server encrypts it again and sends it back to the client.
+
+### 4. Client delivers traffic back to the system
+
+The client receives the encrypted reply from the server, decrypts it, and writes it back into the TUN interface. From there, the operating system delivers it to the application that requested it.
+
+In simple terms, the flow is:
+
+- app traffic enters the TUN interface
+- client encrypts and sends it over UDP
+- server decrypts and forwards it
+- response comes back through the same path
+- client decrypts and sends it to the app
+
+This project uses a TUN interface, UDP sockets, and Libsodium-based encryption to build that tunnel in a simple and understandable way.
+
+## Security layers
+
+The project is organized around a layered security model that mirrors the documentation in `docs/`.
 
 ### Layer 1: Ephemeral X25519 key agreement
 
-The client and server independently generate ephemeral X25519 key pairs and exchange only their public keys during the UDP handshake.
-
-Both sides derive the same shared secret locally; the shared secret is never transmitted.
-
-The Layer 1 implementation is located in:
-
-- `crypto/handshake.h`
-- `crypto/handshake.cpp`
+The client and server independently generate ephemeral X25519 key pairs and exchange public keys during the handshake. The shared secret is derived locally and never transmitted.
 
 ### Layer 2: Session-key derivation
 
-Layer 2 derives two independent symmetric session keys from the X25519 shared secret using Libsodium's `crypto_kdf_derive_from_key()` API.
-
-```text
-X25519 shared secret
-        |
-        v
-Libsodium KDF
-   |         |
-   v         v
-C2S key    S2C key
-```
-
-The derived keys are stored in the following structure:
-
-```cpp
-struct SessionKeys
-{
-    SessionKey clientToServer;
-    SessionKey serverToClient;
-};
-```
-
-The KDF uses the application context `CVPNKEY1` and separate subkey IDs for the client-to-server and server-to-client directions. Therefore:
-
-- the client and server derive matching directional keys independently;
-- the two directional keys are different;
-- session keys are not transmitted over UDP;
-- session keys are not logged or stored as strings.
-
-Layer 2 is implemented in:
-
-- `crypto/session_keys.h`
-- `crypto/session_keys.cpp`
-
-The client derives and retains its `SessionKeys` for the VPN session. The server stores a separate `SessionKeys` instance for each registered client.
-
-Session-key material is wiped with Libsodium's `sodium_memzero()` when it is no longer needed.
+From the X25519 shared secret, the project derives two directional symmetric keys using Libsodium KDF functions. The keys are used separately for traffic in each direction.
 
 ### Layer 3: Packet encryption
 
-Layer 3 encrypts each VPN packet with Libsodium's
-`crypto_aead_xchacha20poly1305_ietf` API. The packet format is
-`[nonce][ciphertext + authentication tag]`, with a fresh random nonce for
-each packet. The C2S and S2C operations use the corresponding Layer 2
-directional session key.
+Each VPN packet is encrypted using Libsodium’s XChaCha20-Poly1305 AEAD primitive. Each packet uses a fresh nonce and the corresponding directional key.
 
 ### Layer 4: Integrity and authentication
 
-Layer 4 uses the Poly1305 authentication component already included in the
-Layer 3 XChaCha20-Poly1305 AEAD operation. The receiver verifies the tag as
-part of decryption and drops failures before writing anything to TUN. A
-second independent Poly1305 pass is intentionally not added.
+Authentication is built into the AEAD tag validation step. Decryption fails if the tag is invalid, and the packet is dropped before it is written to TUN.
 
-The Layer 3 and Layer 4 implementation details are documented in:
+### Layer 5: Replay protection
 
-- `docs/layer3/README.md`
-- `docs/layer4/README.md`
+The project includes replay-protection logic in `crypto/replay_protection.cpp` and associated tracking in the transport and forwarding path. This is intended to prevent duplicate or reordered packets from being accepted.
 
-## Current scope
+## Current status and limitations
 
-Layers 1 through 4 are implemented locally. Replay protection and packet
-sequence numbers remain deferred to Layer 5. Key rotation is also not
-implemented.
+This implementation is a working prototype rather than a production-grade VPN. The current scope includes:
 
-The current handshake is unauthenticated, so X25519 key agreement alone does not provide protection against a man-in-the-middle attack.
+- secure session key establishment;
+- packet encryption and integrity protection;
+- TUN-based client/server traffic forwarding;
+- basic replay protection and sequence tracking;
+- server-side NAT/forwarding setup.
 
-## Validation
+Important caveats:
 
-The Layer 2 implementation has been validated by:
+- the handshake is currently unauthenticated, so the system does not yet protect against active man-in-the-middle attacks;
+- key rotation is not yet implemented;
+- packet sequencing and replay protection are still being matured as part of the ongoing protocol design;
+- routing and network setup are Linux-specific and depend on TUN and `iptables`/`ip6tables` tooling.
 
-- compiling and linking the client and server with Libsodium;
+## Build summary
+
+The project is built with CMake. The main targets are:
+
+- `vpn_client` — client binary
+- `vpn_server` — server binary
+- `vpn_frontend` — optional Qt frontend
+
+The build configuration is defined in `CMakeLists.txt` and links the crypto and TUN logic into the executables.
+
+## Typical end-to-end flow
+
+A normal VPN session looks like this:
+
+```text
+Application traffic
+      |
+      v
+Linux TUN interface
+      |
+      v
+client client1.cpp / tunToServer()
+      |
+      v
+XChaCha20-Poly1305 encrypt + session key
+      |
+      v
+UDP packet to VPN server
+      |
+      v
+server/forward.cpp
+      |
+      v
+decrypt + forward to external network / target host
+      |
+      v
+response comes back through the same encrypted UDP path
+      |
+      v
+serverToTun() writes packet into TUN
+      |
+      v
+application receives data
+```
+
+This is the basic architecture of the project: TUN on the client, encrypted UDP transport in the middle, and a forwarding server on the other side doing NAT and packet translation.
+
+## Validation notes
+
+The crypto layer has been validated by:
+
+- compiling and linking the client and server against Libsodium;
 - deriving keys independently from both sides of an X25519 exchange;
 - verifying that matching directions produce equal keys;
-- verifying that the two directions produce different keys.
+- verifying that opposite directions produce different keys.
+
+These checks are part of the project’s layered protocol validation story and are documented further in the `docs/` directory.
+
+## Running the code
+After cloning the repository first install the libsodium library used for cryptography and qt6 library needed for frontend integration and cmake files for running the vpn frontend
+
+```
+sudo apt update
+sudo apt install build-essential cmake qt6-base-dev
+sudo apt install libsodium-dev
+```
+## Compilation
+
+
+```bash
+mkdir -p build
+cmake -S . -B build
+cmake --build build
+```
+These commands create the build folder configures the projects and compiles all the required executables
+
+To run compile it again only execute the command
+
+```bash
+
+cmake --build build
+```
+after that go inside the build directory and run the required executable 
+
+for client in cli 
+
+```bash
+sudo ./vpn_client
+```
+
+for server in cli 
+
+```bash
+sudo ./vpn_server1
+```
+
+for vpn front end 
+```bash
+sudo ./vpn_frontend
+```
+
