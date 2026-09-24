@@ -109,32 +109,6 @@ quint64 interfaceBytes()
     return total;
 }
 
-bool getKnownServerLocation(const QString& ip, double& lat, double& lon, QString& place)
-{
-    if (ip == QStringLiteral("35.226.148.101"))
-    {
-        lat = 41.2619;
-        lon = -95.8608;
-        place = QStringLiteral("Council Bluffs, United States");
-        return true;
-    }
-    if (ip == QStringLiteral("34.105.188.210"))
-    {
-        lat = 51.5123;
-        lon = -0.0909;
-        place = QStringLiteral("London, United Kingdom");
-        return true;
-    }
-    if (ip == QStringLiteral("34.84.46.243"))
-    {
-        lat = 35.6761;
-        lon = 139.6503;
-        place = QStringLiteral("Tokyo, Japan");
-        return true;
-    }
-    return false;
-}
-
 using LocationCallback = std::function<void(double, double, const QString&)>;
 using LocationFailureCallback = std::function<void()>;
 
@@ -144,80 +118,40 @@ void requestIpLocation(QNetworkAccessManager* network,
                        LocationCallback onSuccess,
                        LocationFailureCallback onFailure)
 {
-    double kLat = 0.0, kLon = 0.0;
-    QString kPlace;
-    if (!ip.isEmpty() && getKnownServerLocation(ip, kLat, kLon, kPlace))
-    {
-        QTimer::singleShot(0, context, [onSuccess, kLat, kLon, kPlace]() {
-            onSuccess(kLat, kLon, kPlace);
-        });
-        return;
-    }
-
     const QString endpoint = ip.isEmpty()
-        ? QStringLiteral("http://ip-api.com/json/")
-        : QStringLiteral("http://ip-api.com/json/%1").arg(ip);
+        ? QStringLiteral("https://ipapi.co/json/")
+        : QStringLiteral("https://ipapi.co/%1/json/").arg(ip);
     QNetworkRequest request{QUrl(endpoint)};
     request.setHeader(QNetworkRequest::UserAgentHeader,
-                      QStringLiteral("CustomVPN-DesktopApp/1.0"));
-    request.setTransferTimeout(5000);
+                      QStringLiteral("CustomVPN/1.0"));
     QNetworkReply* reply = network->get(request);
     QObject::connect(reply, &QNetworkReply::finished, context, [reply,
-                                                                 ip,
                                                                  onSuccess,
                                                                  onFailure]() {
         if (reply->error() != QNetworkReply::NoError)
         {
-            double fallbackLat = 0.0, fallbackLon = 0.0;
-            QString fallbackPlace;
-            if (!ip.isEmpty() && getKnownServerLocation(ip, fallbackLat, fallbackLon, fallbackPlace))
-            {
-                onSuccess(fallbackLat, fallbackLon, fallbackPlace);
-            }
-            else
-            {
-                onFailure();
-            }
+            onFailure();
             reply->deleteLater();
             return;
         }
 
         const QJsonDocument document = QJsonDocument::fromJson(reply->readAll());
         const QJsonObject data = document.object();
-
-        QJsonValue latVal = data.value(QStringLiteral("lat"));
-        if (!latVal.isDouble())
-            latVal = data.value(QStringLiteral("latitude"));
-
-        QJsonValue lonVal = data.value(QStringLiteral("lon"));
-        if (!lonVal.isDouble())
-            lonVal = data.value(QStringLiteral("longitude"));
-
-        if (!latVal.isDouble() || !lonVal.isDouble())
+        const QJsonValue latitude = data.value(QStringLiteral("latitude"));
+        const QJsonValue longitude = data.value(QStringLiteral("longitude"));
+        if (!latitude.isDouble() || !longitude.isDouble())
         {
-            double fallbackLat = 0.0, fallbackLon = 0.0;
-            QString fallbackPlace;
-            if (!ip.isEmpty() && getKnownServerLocation(ip, fallbackLat, fallbackLon, fallbackPlace))
-            {
-                onSuccess(fallbackLat, fallbackLon, fallbackPlace);
-            }
-            else
-            {
-                onFailure();
-            }
+            onFailure();
             reply->deleteLater();
             return;
         }
 
         const QString city = data.value(QStringLiteral("city")).toString();
-        QString country = data.value(QStringLiteral("country")).toString();
-        if (country.isEmpty())
-            country = data.value(QStringLiteral("country_name")).toString();
-
+        const QString country = data.value(QStringLiteral("country_name")).toString();
         const QString place = city.isEmpty() || country.isEmpty()
             ? (city.isEmpty() ? country : city)
             : city + QStringLiteral(", ") + country;
-        onSuccess(latVal.toDouble(), lonVal.toDouble(), place);
+        onSuccess(latitude.toDouble(), longitude.toDouble(), place);
         reply->deleteLater();
     });
 }
@@ -373,8 +307,7 @@ private:
                                    .arg(tileY));
                 QNetworkRequest request(url);
                 request.setHeader(QNetworkRequest::UserAgentHeader,
-                                  QStringLiteral("CustomVPN-DesktopApp/1.0 (Linux; x86_64)"));
-                request.setTransferTimeout(5000);
+                                  QStringLiteral("CustomVPN/1.0"));
                 QNetworkReply* reply = m_tileNetwork.get(request);
                 const QString key = tileKey(tileX, tileY);
                 QObject::connect(reply, &QNetworkReply::finished, this,
