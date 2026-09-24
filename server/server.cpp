@@ -18,6 +18,11 @@ using namespace std;
 static string g_extIface;         
 static bool g_natConfigured = false;
 
+// Must match the /64 prefix that forward.cpp's kVpnIPv6Prefix uses to derive
+// client VPN IPv6 addresses. Host id 2 mirrors the existing IPv4 convention,
+// where 10.0.0.2 is reserved for the server itself.
+static const string kServerVpnIPv6 = "fd00:dead:beef::2";
+
 
 static string run_and_capture(const string& cmd) {
     string result;
@@ -40,12 +45,6 @@ static string run_and_capture(const string& cmd) {
 static string detect_external_iface() {
     string iface = run_and_capture(
         "ip route show default | awk '{for(i=1;i<=NF;i++) if ($i==\"dev\") print $(i+1)}' | head -n1");
-
-    if (iface.empty())
-        cout << "Warning: could not auto-detect external interface. "
-                "NAT/forwarding will not be configured automatically." << endl;
-    else
-        cout << "Detected external interface: " << iface << endl;
 
     return iface;
 }
@@ -71,9 +70,28 @@ static void setup_nat_forwarding(const string& extIface) {
                        " -o tun0 -m state --state RELATED,ESTABLISHED -j ACCEPT";
     system(fwdInCmd.c_str());
 
+    // --- IPv6 equivalents of the three rules above ---
+    // IMPORTANT: this makes tun0's private ULA IPv6 traffic (fd00:dead:beef::/64)
+    // NAT-translate out through extIface via MASQUERADE, exactly like the
+    // IPv4 case. It can only reach the real IPv6 Internet if extIface
+    // *itself* has genuine, working IPv6 connectivity (a routable IPv6
+    // address + a working IPv6 default route on the host). On GCP that
+    // requires the VPC subnet and the VM's network interface to have IPv6
+    // access enabled -- these ip6tables rules cannot create that
+    // connectivity if it isn't already there; see the setup notes.
+    system("sudo sysctl -w net.ipv6.conf.all.forwarding=1");
+
+    string masq6Cmd = "sudo ip6tables -t nat -A POSTROUTING -o " + extIface + " -j MASQUERADE";
+    system(masq6Cmd.c_str());
+
+    string fwdOut6Cmd = "sudo ip6tables -A FORWARD -i tun0 -o " + extIface + " -j ACCEPT";
+    system(fwdOut6Cmd.c_str());
+
+    string fwdIn6Cmd = "sudo ip6tables -A FORWARD -i " + extIface +
+                        " -o tun0 -m state --state RELATED,ESTABLISHED -j ACCEPT";
+    system(fwdIn6Cmd.c_str());
+
     g_natConfigured = true;
-    cout << "IP forwarding enabled and NAT rules configured (tun0 <-> "
-         << extIface << ")." << endl;
 }
 
 
@@ -91,9 +109,18 @@ static void teardown_nat_forwarding() {
                        " -o tun0 -m state --state RELATED,ESTABLISHED -j ACCEPT";
     system(fwdInCmd.c_str());
 
+    string masq6Cmd = "sudo ip6tables -t nat -D POSTROUTING -o " + g_extIface + " -j MASQUERADE";
+    system(masq6Cmd.c_str());
+
+    string fwdOut6Cmd = "sudo ip6tables -D FORWARD -i tun0 -o " + g_extIface + " -j ACCEPT";
+    system(fwdOut6Cmd.c_str());
+
+    string fwdIn6Cmd = "sudo ip6tables -D FORWARD -i " + g_extIface +
+                        " -o tun0 -m state --state RELATED,ESTABLISHED -j ACCEPT";
+    system(fwdIn6Cmd.c_str());
+
     g_natConfigured = false;
 
-    cout << "NAT/forwarding rules removed." << endl;
 }
 
 static void handle_sigint(int) {
@@ -122,6 +149,11 @@ int setup_server_tun() {
     
     system("sudo ip addr add 10.0.0.2/24 dev tun0");
     system("sudo ip link set dev tun0 up");
+
+    // Give tun0 an IPv6 address too, from the same ULA /64 that forward.cpp
+    // hands out client addresses from (see kServerVpnIPv6 above).
+    string addV6Cmd = "sudo ip -6 addr add " + kServerVpnIPv6 + "/64 dev tun0";
+    system(addV6Cmd.c_str());
 
    
     g_extIface = detect_external_iface();
@@ -156,16 +188,12 @@ int main() {
         return 1;
     }
 
-    cout << "VPN Server listening on port 8080..." << endl;
-
     // 1. Create TUN interface
     int tun_fd = setup_server_tun();
     if (tun_fd < 0) {
         close(sockfd);
         return 1;
     }
-    cout << "Server tun0 interface created successfully." << endl;
-
     // 2. Start the multiplexing bridge
     startForwarding(sockfd, tun_fd);
 

@@ -5,3 +5,6 @@ client_app
 echo-test
 images
 tests
+replay.py
+server_app
+build/
