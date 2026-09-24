@@ -12,6 +12,8 @@
 #include <csignal>
 #include "forward.h"
 #include "../crypto/handshake.h"
+#include "../tor/tor_manager.h"
+#include "../tor/tor_config.h"
 
 using namespace std;
 
@@ -124,6 +126,7 @@ static void teardown_nat_forwarding() {
 }
 
 static void handle_sigint(int) {
+    customvpn::TorManager::getInstance().stopTor();
     teardown_nat_forwarding();
     exit(0);
 }
@@ -188,6 +191,10 @@ int main() {
         return 1;
     }
 
+    if (customvpn::TorConfig::fromEnvironment().enabled) {
+        customvpn::TorManager::getInstance().startTor();
+    }
+
     // 1. Create TUN interface
     int tun_fd = setup_server_tun();
     if (tun_fd < 0) {
@@ -197,6 +204,7 @@ int main() {
     // 2. Start the multiplexing bridge
     startForwarding(sockfd, tun_fd);
 
+    customvpn::TorManager::getInstance().stopTor();
     teardown_nat_forwarding();
     close(tun_fd);
     close(sockfd);

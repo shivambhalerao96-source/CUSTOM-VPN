@@ -309,4 +309,18 @@ CMakeFiles/vpn_server.dir/server/server.cpp.o: \
  /usr/include/sodium/crypto_pwhash_scryptsalsa208sha256.h \
  /usr/include/sodium/crypto_stream_salsa2012.h \
  /usr/include/sodium/crypto_stream_salsa208.h \
- /usr/include/sodium/crypto_stream_xchacha20.h
+ /usr/include/sodium/crypto_stream_xchacha20.h \
+ /home/shivam/Desktop/CUSTOM\ VPN/server/../tor/tor_manager.h \
+ /home/shivam/Desktop/CUSTOM\ VPN/server/../tor/tor_config.h \
+ /usr/include/c++/15/mutex /usr/include/c++/15/bits/chrono.h \
+ /usr/include/c++/15/ratio /usr/include/c++/15/cstdint \
+ /usr/include/c++/15/limits /usr/include/c++/15/ctime \
+ /usr/include/c++/15/bits/parse_numbers.h \
+ /usr/include/c++/15/bits/std_mutex.h \
+ /usr/include/c++/15/bits/unique_lock.h /usr/include/c++/15/atomic \
+ /usr/include/c++/15/bits/atomic_base.h \
+ /usr/include/c++/15/bits/atomic_lockfree_defines.h \
+ /usr/include/c++/15/thread /usr/include/c++/15/bits/std_thread.h \
+ /usr/include/c++/15/bits/unique_ptr.h \
+ /usr/include/c++/15/bits/this_thread_sleep.h \
+ /home/shivam/Desktop/CUSTOM\ VPN/server/../tor/tor_config.h

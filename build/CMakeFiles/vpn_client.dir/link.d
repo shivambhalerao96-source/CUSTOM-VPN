@@ -10,6 +10,9 @@ vpn_client: \
   CMakeFiles/vpn_core_objects.dir/crypto/packet_crypto.cpp.o \
   CMakeFiles/vpn_core_objects.dir/crypto/replay_protection.cpp.o \
   CMakeFiles/vpn_core_objects.dir/tun/setup.cpp.o \
+  CMakeFiles/vpn_core_objects.dir/tor/tor_config.cpp.o \
+  CMakeFiles/vpn_core_objects.dir/tor/tor_manager.cpp.o \
+  CMakeFiles/vpn_core_objects.dir/tor/tor_bridge.cpp.o \
   /usr/lib/x86_64-linux-gnu/libsodium.so \
   /usr/lib/gcc/x86_64-linux-gnu/15/libstdc++.so \
   /usr/lib/gcc/x86_64-linux-gnu/15/../../../x86_64-linux-gnu/libm.so \
@@ -61,6 +64,12 @@ CMakeFiles/vpn_core_objects.dir/crypto/packet_crypto.cpp.o:
 CMakeFiles/vpn_core_objects.dir/crypto/replay_protection.cpp.o:
 
 CMakeFiles/vpn_core_objects.dir/tun/setup.cpp.o:
+
+CMakeFiles/vpn_core_objects.dir/tor/tor_config.cpp.o:
+
+CMakeFiles/vpn_core_objects.dir/tor/tor_manager.cpp.o:
+
+CMakeFiles/vpn_core_objects.dir/tor/tor_bridge.cpp.o:
 
 /usr/lib/x86_64-linux-gnu/libsodium.so:
 

@@ -10,6 +10,10 @@
 #include "../tun/setup.h"
 #include "transport.h"
 #include "disconnect.h"
+#include "../crypto/packet_crypto.h"
+#include "../tor/tor_bridge.h"
+#include "../tor/tor_config.h"
+#include "../tor/tor_manager.h"
 
 using namespace std;
 
@@ -113,6 +117,40 @@ int main(int argc, char* argv[])
         ref(stopRequested),
         ref(serverToClientReplay));
 
+    auto sendEncryptedCommand = [&](const string& cmdText) -> bool {
+        uint64_t sequence = 0;
+        {
+            lock_guard<mutex> lock(clientToServerSequenceMutex);
+            if (!clientToServerSequence.nextSequence(sequence))
+            {
+                cerr << "Client-to-server sequence space exhausted" << endl;
+                return false;
+            }
+        }
+
+        vector<unsigned char> encryptedPacket;
+        if (!encryptSequencedVpnPacket(
+                sequence,
+                reinterpret_cast<const unsigned char*>(cmdText.data()),
+                cmdText.size(),
+                sessionKeys.clientToServer,
+                encryptedPacket))
+        {
+            cerr << "Failed to encrypt control packet" << endl;
+            return false;
+        }
+
+        ssize_t bytesSent = sendto(
+            sockfd,
+            encryptedPacket.data(),
+            encryptedPacket.size(),
+            0,
+            (sockaddr*)&serverAddress,
+            sizeof(serverAddress));
+
+        return (bytesSent == static_cast<ssize_t>(encryptedPacket.size()));
+    };
+
     thread control([&]() {
         string command;
         while (!stopRequested.load())
@@ -122,6 +160,7 @@ int main(int argc, char* argv[])
 
             if (command == "disconnect")
             {
+                customvpn::TorBridge::getInstance().stop();
                 sendDisconnectMessage(
                     sockfd,
                     serverAddress,
@@ -133,6 +172,25 @@ int main(int argc, char* argv[])
                 close(sockfd);
                 close(tun_fd);
                 break;
+            }
+            else if (command == "tor on")
+            {
+                auto cfg = customvpn::TorConfig::fromEnvironment();
+                sendEncryptedCommand("VPN_TOR_ON");
+                customvpn::TorBridge::getInstance().start(
+                    cfg.clientBridgeHost,
+                    cfg.clientBridgePort,
+                    cfg.serverVpnIp,
+                    cfg.socksPort);
+            }
+            else if (command == "tor off")
+            {
+                sendEncryptedCommand("VPN_TOR_OFF");
+                customvpn::TorBridge::getInstance().stop();
+            }
+            else if (command == "tor status")
+            {
+                sendEncryptedCommand("VPN_TOR_STATUS");
             }
         }
     });

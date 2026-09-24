@@ -1,33 +1,51 @@
 [
 {
   "directory": "/home/shivam/Desktop/CUSTOM VPN/build",
-  "command": "/usr/bin/c++  -I\"/home/shivam/Desktop/CUSTOM VPN\" -I\"/home/shivam/Desktop/CUSTOM VPN/crypto\" -I\"/home/shivam/Desktop/CUSTOM VPN/tun\" -std=c++17 -o CMakeFiles/vpn_core_objects.dir/crypto/handshake.cpp.o -c \"/home/shivam/Desktop/CUSTOM VPN/crypto/handshake.cpp\"",
+  "command": "/usr/bin/c++  -I\"/home/shivam/Desktop/CUSTOM VPN\" -I\"/home/shivam/Desktop/CUSTOM VPN/crypto\" -I\"/home/shivam/Desktop/CUSTOM VPN/tun\" -I\"/home/shivam/Desktop/CUSTOM VPN/tor\" -std=c++17 -o CMakeFiles/vpn_core_objects.dir/crypto/handshake.cpp.o -c \"/home/shivam/Desktop/CUSTOM VPN/crypto/handshake.cpp\"",
   "file": "/home/shivam/Desktop/CUSTOM VPN/crypto/handshake.cpp",
   "output": "CMakeFiles/vpn_core_objects.dir/crypto/handshake.cpp.o"
 },
 {
   "directory": "/home/shivam/Desktop/CUSTOM VPN/build",
-  "command": "/usr/bin/c++  -I\"/home/shivam/Desktop/CUSTOM VPN\" -I\"/home/shivam/Desktop/CUSTOM VPN/crypto\" -I\"/home/shivam/Desktop/CUSTOM VPN/tun\" -std=c++17 -o CMakeFiles/vpn_core_objects.dir/crypto/session_keys.cpp.o -c \"/home/shivam/Desktop/CUSTOM VPN/crypto/session_keys.cpp\"",
+  "command": "/usr/bin/c++  -I\"/home/shivam/Desktop/CUSTOM VPN\" -I\"/home/shivam/Desktop/CUSTOM VPN/crypto\" -I\"/home/shivam/Desktop/CUSTOM VPN/tun\" -I\"/home/shivam/Desktop/CUSTOM VPN/tor\" -std=c++17 -o CMakeFiles/vpn_core_objects.dir/crypto/session_keys.cpp.o -c \"/home/shivam/Desktop/CUSTOM VPN/crypto/session_keys.cpp\"",
   "file": "/home/shivam/Desktop/CUSTOM VPN/crypto/session_keys.cpp",
   "output": "CMakeFiles/vpn_core_objects.dir/crypto/session_keys.cpp.o"
 },
 {
   "directory": "/home/shivam/Desktop/CUSTOM VPN/build",
-  "command": "/usr/bin/c++  -I\"/home/shivam/Desktop/CUSTOM VPN\" -I\"/home/shivam/Desktop/CUSTOM VPN/crypto\" -I\"/home/shivam/Desktop/CUSTOM VPN/tun\" -std=c++17 -o CMakeFiles/vpn_core_objects.dir/crypto/packet_crypto.cpp.o -c \"/home/shivam/Desktop/CUSTOM VPN/crypto/packet_crypto.cpp\"",
+  "command": "/usr/bin/c++  -I\"/home/shivam/Desktop/CUSTOM VPN\" -I\"/home/shivam/Desktop/CUSTOM VPN/crypto\" -I\"/home/shivam/Desktop/CUSTOM VPN/tun\" -I\"/home/shivam/Desktop/CUSTOM VPN/tor\" -std=c++17 -o CMakeFiles/vpn_core_objects.dir/crypto/packet_crypto.cpp.o -c \"/home/shivam/Desktop/CUSTOM VPN/crypto/packet_crypto.cpp\"",
   "file": "/home/shivam/Desktop/CUSTOM VPN/crypto/packet_crypto.cpp",
   "output": "CMakeFiles/vpn_core_objects.dir/crypto/packet_crypto.cpp.o"
 },
 {
   "directory": "/home/shivam/Desktop/CUSTOM VPN/build",
-  "command": "/usr/bin/c++  -I\"/home/shivam/Desktop/CUSTOM VPN\" -I\"/home/shivam/Desktop/CUSTOM VPN/crypto\" -I\"/home/shivam/Desktop/CUSTOM VPN/tun\" -std=c++17 -o CMakeFiles/vpn_core_objects.dir/crypto/replay_protection.cpp.o -c \"/home/shivam/Desktop/CUSTOM VPN/crypto/replay_protection.cpp\"",
+  "command": "/usr/bin/c++  -I\"/home/shivam/Desktop/CUSTOM VPN\" -I\"/home/shivam/Desktop/CUSTOM VPN/crypto\" -I\"/home/shivam/Desktop/CUSTOM VPN/tun\" -I\"/home/shivam/Desktop/CUSTOM VPN/tor\" -std=c++17 -o CMakeFiles/vpn_core_objects.dir/crypto/replay_protection.cpp.o -c \"/home/shivam/Desktop/CUSTOM VPN/crypto/replay_protection.cpp\"",
   "file": "/home/shivam/Desktop/CUSTOM VPN/crypto/replay_protection.cpp",
   "output": "CMakeFiles/vpn_core_objects.dir/crypto/replay_protection.cpp.o"
 },
 {
   "directory": "/home/shivam/Desktop/CUSTOM VPN/build",
-  "command": "/usr/bin/c++  -I\"/home/shivam/Desktop/CUSTOM VPN\" -I\"/home/shivam/Desktop/CUSTOM VPN/crypto\" -I\"/home/shivam/Desktop/CUSTOM VPN/tun\" -std=c++17 -o CMakeFiles/vpn_core_objects.dir/tun/setup.cpp.o -c \"/home/shivam/Desktop/CUSTOM VPN/tun/setup.cpp\"",
+  "command": "/usr/bin/c++  -I\"/home/shivam/Desktop/CUSTOM VPN\" -I\"/home/shivam/Desktop/CUSTOM VPN/crypto\" -I\"/home/shivam/Desktop/CUSTOM VPN/tun\" -I\"/home/shivam/Desktop/CUSTOM VPN/tor\" -std=c++17 -o CMakeFiles/vpn_core_objects.dir/tun/setup.cpp.o -c \"/home/shivam/Desktop/CUSTOM VPN/tun/setup.cpp\"",
   "file": "/home/shivam/Desktop/CUSTOM VPN/tun/setup.cpp",
   "output": "CMakeFiles/vpn_core_objects.dir/tun/setup.cpp.o"
+},
+{
+  "directory": "/home/shivam/Desktop/CUSTOM VPN/build",
+  "command": "/usr/bin/c++  -I\"/home/shivam/Desktop/CUSTOM VPN\" -I\"/home/shivam/Desktop/CUSTOM VPN/crypto\" -I\"/home/shivam/Desktop/CUSTOM VPN/tun\" -I\"/home/shivam/Desktop/CUSTOM VPN/tor\" -std=c++17 -o CMakeFiles/vpn_core_objects.dir/tor/tor_config.cpp.o -c \"/home/shivam/Desktop/CUSTOM VPN/tor/tor_config.cpp\"",
+  "file": "/home/shivam/Desktop/CUSTOM VPN/tor/tor_config.cpp",
+  "output": "CMakeFiles/vpn_core_objects.dir/tor/tor_config.cpp.o"
+},
+{
+  "directory": "/home/shivam/Desktop/CUSTOM VPN/build",
+  "command": "/usr/bin/c++  -I\"/home/shivam/Desktop/CUSTOM VPN\" -I\"/home/shivam/Desktop/CUSTOM VPN/crypto\" -I\"/home/shivam/Desktop/CUSTOM VPN/tun\" -I\"/home/shivam/Desktop/CUSTOM VPN/tor\" -std=c++17 -o CMakeFiles/vpn_core_objects.dir/tor/tor_manager.cpp.o -c \"/home/shivam/Desktop/CUSTOM VPN/tor/tor_manager.cpp\"",
+  "file": "/home/shivam/Desktop/CUSTOM VPN/tor/tor_manager.cpp",
+  "output": "CMakeFiles/vpn_core_objects.dir/tor/tor_manager.cpp.o"
+},
+{
+  "directory": "/home/shivam/Desktop/CUSTOM VPN/build",
+  "command": "/usr/bin/c++  -I\"/home/shivam/Desktop/CUSTOM VPN\" -I\"/home/shivam/Desktop/CUSTOM VPN/crypto\" -I\"/home/shivam/Desktop/CUSTOM VPN/tun\" -I\"/home/shivam/Desktop/CUSTOM VPN/tor\" -std=c++17 -o CMakeFiles/vpn_core_objects.dir/tor/tor_bridge.cpp.o -c \"/home/shivam/Desktop/CUSTOM VPN/tor/tor_bridge.cpp\"",
+  "file": "/home/shivam/Desktop/CUSTOM VPN/tor/tor_bridge.cpp",
+  "output": "CMakeFiles/vpn_core_objects.dir/tor/tor_bridge.cpp.o"
 },
 {
   "directory": "/home/shivam/Desktop/CUSTOM VPN/build",
@@ -70,5 +88,35 @@
   "command": "/usr/bin/c++ -DQT_CORE_LIB -DQT_GUI_LIB -DQT_NETWORK_LIB -DQT_NO_DEBUG -DQT_WIDGETS_LIB -I\"/home/shivam/Desktop/CUSTOM VPN/build/vpn_frontend_autogen/include\" -isystem /usr/include/x86_64-linux-gnu/qt6/QtWidgets -isystem /usr/include/x86_64-linux-gnu/qt6 -isystem /usr/include/x86_64-linux-gnu/qt6/QtCore -isystem /usr/lib/x86_64-linux-gnu/qt6/mkspecs/linux-g++ -isystem /usr/include/x86_64-linux-gnu/qt6/QtGui -isystem /usr/include/x86_64-linux-gnu/qt6/QtNetwork -std=c++17 -o CMakeFiles/vpn_frontend.dir/frontend/app.cpp.o -c \"/home/shivam/Desktop/CUSTOM VPN/frontend/app.cpp\"",
   "file": "/home/shivam/Desktop/CUSTOM VPN/frontend/app.cpp",
   "output": "CMakeFiles/vpn_frontend.dir/frontend/app.cpp.o"
+},
+{
+  "directory": "/home/shivam/Desktop/CUSTOM VPN/build",
+  "command": "/usr/bin/c++  -I\"/home/shivam/Desktop/CUSTOM VPN/crypto\" -std=c++17 -o CMakeFiles/test_layer3.dir/tests/layer3_test.cpp.o -c \"/home/shivam/Desktop/CUSTOM VPN/tests/layer3_test.cpp\"",
+  "file": "/home/shivam/Desktop/CUSTOM VPN/tests/layer3_test.cpp",
+  "output": "CMakeFiles/test_layer3.dir/tests/layer3_test.cpp.o"
+},
+{
+  "directory": "/home/shivam/Desktop/CUSTOM VPN/build",
+  "command": "/usr/bin/c++  -I\"/home/shivam/Desktop/CUSTOM VPN/crypto\" -std=c++17 -o CMakeFiles/test_layer4.dir/tests/layer4_test.cpp.o -c \"/home/shivam/Desktop/CUSTOM VPN/tests/layer4_test.cpp\"",
+  "file": "/home/shivam/Desktop/CUSTOM VPN/tests/layer4_test.cpp",
+  "output": "CMakeFiles/test_layer4.dir/tests/layer4_test.cpp.o"
+},
+{
+  "directory": "/home/shivam/Desktop/CUSTOM VPN/build",
+  "command": "/usr/bin/c++  -I\"/home/shivam/Desktop/CUSTOM VPN/crypto\" -std=c++17 -o CMakeFiles/test_layer5.dir/tests/layer5_test.cpp.o -c \"/home/shivam/Desktop/CUSTOM VPN/tests/layer5_test.cpp\"",
+  "file": "/home/shivam/Desktop/CUSTOM VPN/tests/layer5_test.cpp",
+  "output": "CMakeFiles/test_layer5.dir/tests/layer5_test.cpp.o"
+},
+{
+  "directory": "/home/shivam/Desktop/CUSTOM VPN/build",
+  "command": "/usr/bin/c++  -I\"/home/shivam/Desktop/CUSTOM VPN\" -I\"/home/shivam/Desktop/CUSTOM VPN/tor\" -std=c++17 -o CMakeFiles/test_tor_manager.dir/tests/tor_manager_test.cpp.o -c \"/home/shivam/Desktop/CUSTOM VPN/tests/tor_manager_test.cpp\"",
+  "file": "/home/shivam/Desktop/CUSTOM VPN/tests/tor_manager_test.cpp",
+  "output": "CMakeFiles/test_tor_manager.dir/tests/tor_manager_test.cpp.o"
+},
+{
+  "directory": "/home/shivam/Desktop/CUSTOM VPN/build",
+  "command": "/usr/bin/c++  -I\"/home/shivam/Desktop/CUSTOM VPN\" -I\"/home/shivam/Desktop/CUSTOM VPN/tor\" -std=c++17 -o CMakeFiles/test_tor_e2e.dir/tests/tor_e2e_test.cpp.o -c \"/home/shivam/Desktop/CUSTOM VPN/tests/tor_e2e_test.cpp\"",
+  "file": "/home/shivam/Desktop/CUSTOM VPN/tests/tor_e2e_test.cpp",
+  "output": "CMakeFiles/test_tor_e2e.dir/tests/tor_e2e_test.cpp.o"
 }
 ]

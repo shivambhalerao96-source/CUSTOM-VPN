@@ -6,6 +6,8 @@ CMakeFiles/vpn_server.dir/server/forward.cpp.o: /home/shivam/Desktop/CUSTOM\ VPN
   /home/shivam/Desktop/CUSTOM\ VPN/crypto/packet_crypto.h \
   /home/shivam/Desktop/CUSTOM\ VPN/crypto/replay_protection.h \
   /home/shivam/Desktop/CUSTOM\ VPN/crypto/session_keys.h \
+  /home/shivam/Desktop/CUSTOM\ VPN/tor/tor_config.h \
+  /home/shivam/Desktop/CUSTOM\ VPN/tor/tor_manager.h \
   /home/shivam/Desktop/CUSTOM\ VPN/server/forward.h \
   /usr/include/alloca.h \
   /usr/include/arpa/inet.h \
@@ -19,17 +21,21 @@ CMakeFiles/vpn_server.dir/server/forward.cpp.o: /home/shivam/Desktop/CUSTOM\ VPN
   /usr/include/asm-generic/types.h \
   /usr/include/c++/15/algorithm \
   /usr/include/c++/15/array \
+  /usr/include/c++/15/atomic \
   /usr/include/c++/15/backward/binders.h \
   /usr/include/c++/15/bit \
   /usr/include/c++/15/bits/algorithmfwd.h \
   /usr/include/c++/15/bits/alloc_traits.h \
   /usr/include/c++/15/bits/allocator.h \
+  /usr/include/c++/15/bits/atomic_base.h \
+  /usr/include/c++/15/bits/atomic_lockfree_defines.h \
   /usr/include/c++/15/bits/basic_ios.h \
   /usr/include/c++/15/bits/basic_ios.tcc \
   /usr/include/c++/15/bits/basic_string.h \
   /usr/include/c++/15/bits/basic_string.tcc \
   /usr/include/c++/15/bits/char_traits.h \
   /usr/include/c++/15/bits/charconv.h \
+  /usr/include/c++/15/bits/chrono.h \
   /usr/include/c++/15/bits/codecvt.h \
   /usr/include/c++/15/bits/concept_check.h \
   /usr/include/c++/15/bits/cpp_type_traits.h \
@@ -65,6 +71,7 @@ CMakeFiles/vpn_server.dir/server/forward.cpp.o: /home/shivam/Desktop/CUSTOM\ VPN
   /usr/include/c++/15/bits/ostream.h \
   /usr/include/c++/15/bits/ostream.tcc \
   /usr/include/c++/15/bits/ostream_insert.h \
+  /usr/include/c++/15/bits/parse_numbers.h \
   /usr/include/c++/15/bits/postypes.h \
   /usr/include/c++/15/bits/predefined_ops.h \
   /usr/include/c++/15/bits/ptr_traits.h \
@@ -74,6 +81,8 @@ CMakeFiles/vpn_server.dir/server/forward.cpp.o: /home/shivam/Desktop/CUSTOM\ VPN
   /usr/include/c++/15/bits/requires_hosted.h \
   /usr/include/c++/15/bits/sstream.tcc \
   /usr/include/c++/15/bits/std_abs.h \
+  /usr/include/c++/15/bits/std_mutex.h \
+  /usr/include/c++/15/bits/std_thread.h \
   /usr/include/c++/15/bits/stl_algo.h \
   /usr/include/c++/15/bits/stl_algobase.h \
   /usr/include/c++/15/bits/stl_bvector.h \
@@ -91,7 +100,10 @@ CMakeFiles/vpn_server.dir/server/forward.cpp.o: /home/shivam/Desktop/CUSTOM\ VPN
   /usr/include/c++/15/bits/streambuf_iterator.h \
   /usr/include/c++/15/bits/string_view.tcc \
   /usr/include/c++/15/bits/stringfwd.h \
+  /usr/include/c++/15/bits/this_thread_sleep.h \
   /usr/include/c++/15/bits/uniform_int_dist.h \
+  /usr/include/c++/15/bits/unique_lock.h \
+  /usr/include/c++/15/bits/unique_ptr.h \
   /usr/include/c++/15/bits/unordered_map.h \
   /usr/include/c++/15/bits/uses_allocator.h \
   /usr/include/c++/15/bits/uses_allocator_args.h \
@@ -125,12 +137,15 @@ CMakeFiles/vpn_server.dir/server/forward.cpp.o: /home/shivam/Desktop/CUSTOM\ VPN
   /usr/include/c++/15/iosfwd \
   /usr/include/c++/15/iostream \
   /usr/include/c++/15/istream \
+  /usr/include/c++/15/limits \
   /usr/include/c++/15/locale \
+  /usr/include/c++/15/mutex \
   /usr/include/c++/15/new \
   /usr/include/c++/15/ostream \
   /usr/include/c++/15/pstl/execution_defs.h \
   /usr/include/c++/15/pstl/glue_algorithm_defs.h \
   /usr/include/c++/15/pstl/pstl_config.h \
+  /usr/include/c++/15/ratio \
   /usr/include/c++/15/sstream \
   /usr/include/c++/15/stdexcept \
   /usr/include/c++/15/stdlib.h \
@@ -138,6 +153,7 @@ CMakeFiles/vpn_server.dir/server/forward.cpp.o: /home/shivam/Desktop/CUSTOM\ VPN
   /usr/include/c++/15/string \
   /usr/include/c++/15/string_view \
   /usr/include/c++/15/system_error \
+  /usr/include/c++/15/thread \
   /usr/include/c++/15/tuple \
   /usr/include/c++/15/type_traits \
   /usr/include/c++/15/typeinfo \
@@ -349,6 +365,8 @@ CMakeFiles/vpn_server.dir/server/forward.cpp.o: /home/shivam/Desktop/CUSTOM\ VPN
 
 CMakeFiles/vpn_server.dir/server/server.cpp.o: /home/shivam/Desktop/CUSTOM\ VPN/server/server.cpp \
   /home/shivam/Desktop/CUSTOM\ VPN/crypto/handshake.h \
+  /home/shivam/Desktop/CUSTOM\ VPN/tor/tor_config.h \
+  /home/shivam/Desktop/CUSTOM\ VPN/tor/tor_manager.h \
   /home/shivam/Desktop/CUSTOM\ VPN/server/forward.h \
   /usr/include/alloca.h \
   /usr/include/arpa/inet.h \
@@ -363,16 +381,20 @@ CMakeFiles/vpn_server.dir/server/server.cpp.o: /home/shivam/Desktop/CUSTOM\ VPN/
   /usr/include/asm-generic/sockios.h \
   /usr/include/asm-generic/types.h \
   /usr/include/c++/15/array \
+  /usr/include/c++/15/atomic \
   /usr/include/c++/15/backward/binders.h \
   /usr/include/c++/15/bit \
   /usr/include/c++/15/bits/alloc_traits.h \
   /usr/include/c++/15/bits/allocator.h \
+  /usr/include/c++/15/bits/atomic_base.h \
+  /usr/include/c++/15/bits/atomic_lockfree_defines.h \
   /usr/include/c++/15/bits/basic_ios.h \
   /usr/include/c++/15/bits/basic_ios.tcc \
   /usr/include/c++/15/bits/basic_string.h \
   /usr/include/c++/15/bits/basic_string.tcc \
   /usr/include/c++/15/bits/char_traits.h \
   /usr/include/c++/15/bits/charconv.h \
+  /usr/include/c++/15/bits/chrono.h \
   /usr/include/c++/15/bits/concept_check.h \
   /usr/include/c++/15/bits/cpp_type_traits.h \
   /usr/include/c++/15/bits/cxxabi_forced.h \
@@ -399,6 +421,7 @@ CMakeFiles/vpn_server.dir/server/server.cpp.o: /home/shivam/Desktop/CUSTOM\ VPN/
   /usr/include/c++/15/bits/ostream.h \
   /usr/include/c++/15/bits/ostream.tcc \
   /usr/include/c++/15/bits/ostream_insert.h \
+  /usr/include/c++/15/bits/parse_numbers.h \
   /usr/include/c++/15/bits/postypes.h \
   /usr/include/c++/15/bits/predefined_ops.h \
   /usr/include/c++/15/bits/ptr_traits.h \
@@ -406,6 +429,8 @@ CMakeFiles/vpn_server.dir/server/server.cpp.o: /home/shivam/Desktop/CUSTOM\ VPN/
   /usr/include/c++/15/bits/refwrap.h \
   /usr/include/c++/15/bits/requires_hosted.h \
   /usr/include/c++/15/bits/std_abs.h \
+  /usr/include/c++/15/bits/std_mutex.h \
+  /usr/include/c++/15/bits/std_thread.h \
   /usr/include/c++/15/bits/stl_algobase.h \
   /usr/include/c++/15/bits/stl_construct.h \
   /usr/include/c++/15/bits/stl_function.h \
@@ -417,6 +442,9 @@ CMakeFiles/vpn_server.dir/server/server.cpp.o: /home/shivam/Desktop/CUSTOM\ VPN/
   /usr/include/c++/15/bits/streambuf_iterator.h \
   /usr/include/c++/15/bits/string_view.tcc \
   /usr/include/c++/15/bits/stringfwd.h \
+  /usr/include/c++/15/bits/this_thread_sleep.h \
+  /usr/include/c++/15/bits/unique_lock.h \
+  /usr/include/c++/15/bits/unique_ptr.h \
   /usr/include/c++/15/bits/uses_allocator.h \
   /usr/include/c++/15/bits/uses_allocator_args.h \
   /usr/include/c++/15/bits/utility.h \
@@ -428,9 +456,11 @@ CMakeFiles/vpn_server.dir/server/server.cpp.o: /home/shivam/Desktop/CUSTOM\ VPN/
   /usr/include/c++/15/concepts \
   /usr/include/c++/15/csignal \
   /usr/include/c++/15/cstddef \
+  /usr/include/c++/15/cstdint \
   /usr/include/c++/15/cstdio \
   /usr/include/c++/15/cstdlib \
   /usr/include/c++/15/cstring \
+  /usr/include/c++/15/ctime \
   /usr/include/c++/15/cwchar \
   /usr/include/c++/15/cwctype \
   /usr/include/c++/15/debug/assertions.h \
@@ -446,15 +476,19 @@ CMakeFiles/vpn_server.dir/server/server.cpp.o: /home/shivam/Desktop/CUSTOM\ VPN/
   /usr/include/c++/15/iosfwd \
   /usr/include/c++/15/iostream \
   /usr/include/c++/15/istream \
+  /usr/include/c++/15/limits \
+  /usr/include/c++/15/mutex \
   /usr/include/c++/15/new \
   /usr/include/c++/15/ostream \
   /usr/include/c++/15/pstl/pstl_config.h \
+  /usr/include/c++/15/ratio \
   /usr/include/c++/15/stdexcept \
   /usr/include/c++/15/stdlib.h \
   /usr/include/c++/15/streambuf \
   /usr/include/c++/15/string \
   /usr/include/c++/15/string_view \
   /usr/include/c++/15/system_error \
+  /usr/include/c++/15/thread \
   /usr/include/c++/15/tuple \
   /usr/include/c++/15/type_traits \
   /usr/include/c++/15/typeinfo \
@@ -723,6 +757,9 @@ vpn_server1: /lib64/ld-linux-x86-64.so.2 \
   CMakeFiles/vpn_core_objects.dir/crypto/packet_crypto.cpp.o \
   CMakeFiles/vpn_core_objects.dir/crypto/replay_protection.cpp.o \
   CMakeFiles/vpn_core_objects.dir/crypto/session_keys.cpp.o \
+  CMakeFiles/vpn_core_objects.dir/tor/tor_bridge.cpp.o \
+  CMakeFiles/vpn_core_objects.dir/tor/tor_config.cpp.o \
+  CMakeFiles/vpn_core_objects.dir/tor/tor_manager.cpp.o \
   CMakeFiles/vpn_core_objects.dir/tun/setup.cpp.o \
   CMakeFiles/vpn_server.dir/server/forward.cpp.o \
   CMakeFiles/vpn_server.dir/server/server.cpp.o
@@ -732,7 +769,9 @@ CMakeFiles/vpn_server.dir/server/server.cpp.o:
 
 CMakeFiles/vpn_core_objects.dir/tun/setup.cpp.o:
 
-CMakeFiles/vpn_core_objects.dir/crypto/session_keys.cpp.o:
+CMakeFiles/vpn_core_objects.dir/tor/tor_manager.cpp.o:
+
+CMakeFiles/vpn_core_objects.dir/tor/tor_config.cpp.o:
 
 CMakeFiles/vpn_core_objects.dir/crypto/packet_crypto.cpp.o:
 
@@ -772,8 +811,6 @@ CMakeFiles/vpn_core_objects.dir/crypto/packet_crypto.cpp.o:
 
 /usr/include/x86_64-linux-gnu/asm/ioctl.h:
 
-/usr/include/string.h:
-
 /usr/include/linux/sockios.h:
 
 /usr/include/linux/openat2.h:
@@ -805,8 +842,6 @@ CMakeFiles/vpn_core_objects.dir/crypto/packet_crypto.cpp.o:
 /usr/include/x86_64-linux-gnu/c++/15/bits/messages_members.h:
 
 /usr/include/x86_64-linux-gnu/c++/15/bits/gthr.h:
-
-/usr/include/x86_64-linux-gnu/c++/15/bits/gthr-default.h:
 
 /usr/include/x86_64-linux-gnu/c++/15/bits/error_constants.h:
 
@@ -847,6 +882,8 @@ CMakeFiles/vpn_core_objects.dir/crypto/packet_crypto.cpp.o:
 /usr/include/x86_64-linux-gnu/bits/types/timer_t.h:
 
 /usr/include/x86_64-linux-gnu/bits/types/struct_timeval.h:
+
+CMakeFiles/vpn_core_objects.dir/tor/tor_bridge.cpp.o:
 
 /usr/include/x86_64-linux-gnu/bits/types/sigevent_t.h:
 
@@ -924,9 +961,19 @@ CMakeFiles/vpn_core_objects.dir/crypto/packet_crypto.cpp.o:
 
 /usr/include/x86_64-linux-gnu/bits/posix1_lim.h:
 
-/usr/include/c++/15/ext/numeric_traits.h:
+/usr/include/x86_64-linux-gnu/bits/getopt_core.h:
 
-/usr/include/sodium/crypto_generichash.h:
+/usr/include/x86_64-linux-gnu/bits/floatn.h:
+
+/usr/include/x86_64-linux-gnu/bits/signum-arch.h:
+
+/usr/include/x86_64-linux-gnu/bits/errno.h:
+
+/usr/include/x86_64-linux-gnu/bits/endianness.h:
+
+/usr/include/x86_64-linux-gnu/bits/byteswap.h:
+
+/usr/include/x86_64-linux-gnu/bits/atomic_wide_counter.h:
 
 /usr/include/c++/15/ext/alloc_traits.h:
 
@@ -944,17 +991,11 @@ CMakeFiles/vpn_core_objects.dir/crypto/packet_crypto.cpp.o:
 
 /usr/include/c++/15/bits/stl_function.h:
 
-/usr/include/c++/15/ext/type_traits.h:
-
-/usr/include/c++/15/bits/functional_hash.h:
-
 /usr/include/c++/15/cstdlib:
 
 /usr/include/c++/15/bits/requires_hosted.h:
 
 /usr/include/c++/15/bits/locale_facets.h:
-
-/usr/include/x86_64-linux-gnu/bits/atomic_wide_counter.h:
 
 /usr/include/c++/15/cstdint:
 
@@ -978,11 +1019,13 @@ CMakeFiles/vpn_core_objects.dir/crypto/packet_crypto.cpp.o:
 
 /usr/include/c++/15/bits/utility.h:
 
+/usr/include/string.h:
+
+/home/shivam/Desktop/CUSTOM\ VPN/tor/tor_config.h:
+
 /usr/lib/x86_64-linux-gnu/libgcc_s.so.1:
 
 /usr/include/linux/close_range.h:
-
-/usr/include/c++/15/ios:
 
 /usr/include/c++/15/bits/uniform_int_dist.h:
 
@@ -995,8 +1038,6 @@ CMakeFiles/vpn_core_objects.dir/crypto/packet_crypto.cpp.o:
 /usr/include/c++/15/bits/streambuf_iterator.h:
 
 /usr/include/x86_64-linux-gnu/asm/errno.h:
-
-/usr/include/c++/15/bits/stl_tempbuf.h:
 
 /usr/include/x86_64-linux-gnu/bits/struct_rwlock.h:
 
@@ -1022,6 +1063,10 @@ CMakeFiles/vpn_core_objects.dir/crypto/replay_protection.cpp.o:
 
 /usr/include/c++/15/bits/range_access.h:
 
+/usr/include/c++/15/ext/numeric_traits.h:
+
+/usr/include/sodium/crypto_generichash.h:
+
 /usr/include/c++/15/debug/debug.h:
 
 CMakeFiles/vpn_core_objects.dir/crypto/handshake.cpp.o:
@@ -1036,13 +1081,25 @@ CMakeFiles/vpn_core_objects.dir/crypto/handshake.cpp.o:
 
 /usr/include/sodium/crypto_generichash_blake2b.h:
 
+/usr/include/sodium/crypto_scalarmult_curve25519.h:
+
 /usr/include/c++/15/bits/postypes.h:
 
 /usr/include/x86_64-linux-gnu/asm/posix_types.h:
 
+CMakeFiles/vpn_core_objects.dir/crypto/session_keys.cpp.o:
+
+/usr/include/c++/15/bits/parse_numbers.h:
+
 /usr/include/x86_64-linux-gnu/bits/sigstack.h:
 
 /usr/include/c++/15/bits/ostream.tcc:
+
+/usr/include/c++/15/bits/std_mutex.h:
+
+/usr/include/x86_64-linux-gnu/bits/endian.h:
+
+/usr/include/c++/15/bits/unordered_map.h:
 
 /usr/include/c++/15/bits/node_handle.h:
 
@@ -1053,6 +1110,26 @@ CMakeFiles/vpn_core_objects.dir/crypto/handshake.cpp.o:
 /usr/include/c++/15/bits/uses_allocator.h:
 
 /usr/include/sodium/crypto_shorthash_siphash24.h:
+
+/usr/include/x86_64-linux-gnu/asm/types.h:
+
+/usr/include/c++/15/cwctype:
+
+/usr/include/sodium/runtime.h:
+
+/usr/include/x86_64-linux-gnu/bits/signum-generic.h:
+
+/usr/include/c++/15/bits/memoryfwd.h:
+
+/usr/lib/x86_64-linux-gnu/libm.so:
+
+/usr/include/asm-generic/int-ll64.h:
+
+/usr/include/c++/15/bits/memory_resource.h:
+
+/usr/include/c++/15/bits/atomic_lockfree_defines.h:
+
+/usr/include/c++/15/bits/localefwd.h:
 
 /usr/include/c++/15/bits/version.h:
 
@@ -1070,23 +1147,93 @@ CMakeFiles/vpn_core_objects.dir/crypto/handshake.cpp.o:
 
 /usr/include/asm-generic/errno.h:
 
-/usr/include/sodium/runtime.h:
+/usr/include/c++/15/bits/atomic_base.h:
+
+/usr/include/x86_64-linux-gnu/bits/fcntl-linux.h:
+
+/usr/include/netinet/ip.h:
+
+/usr/include/c++/15/bits/chrono.h:
 
 /usr/include/x86_64-linux-gnu/bits/socket.h:
 
 /usr/include/c++/15/bits/algorithmfwd.h:
 
-/usr/include/c++/15/bits/stl_pair.h:
+/usr/include/x86_64-linux-gnu/c++/15/bits/ctype_inline.h:
 
-/usr/include/c++/15/bits/stl_bvector.h:
+/usr/include/c++/15/bits/move.h:
 
-CMakeFiles/vpn_server.dir/server/forward.cpp.o:
+/usr/include/sodium/crypto_onetimeauth.h:
 
-/usr/include/c++/15/bits/stl_iterator.h:
+/usr/include/c++/15/bits/nested_exception.h:
 
-/usr/include/c++/15/vector:
+/usr/include/linux/sched/types.h:
 
-/usr/include/c++/15/bits/basic_ios.tcc:
+/usr/include/sodium/crypto_scalarmult_ed25519.h:
+
+/usr/include/c++/15/bits/quoted_string.h:
+
+/usr/include/asm-generic/socket.h:
+
+/usr/include/c++/15/bits/hashtable.h:
+
+/usr/include/c++/15/bits/stl_uninitialized.h:
+
+/usr/include/sodium/crypto_box.h:
+
+/usr/include/c++/15/bits/stl_tempbuf.h:
+
+/usr/lib/x86_64-linux-gnu/libmvec.so.1:
+
+/usr/include/c++/15/bits/stl_iterator_base_types.h:
+
+/usr/include/x86_64-linux-gnu/bits/confname.h:
+
+/usr/include/sodium/crypto_aead_aes256gcm.h:
+
+/usr/include/stdc-predef.h:
+
+/usr/include/c++/15/pstl/glue_algorithm_defs.h:
+
+/usr/include/c++/15/bits/charconv.h:
+
+/usr/include/x86_64-linux-gnu/bits/environments.h:
+
+/usr/include/c++/15/bits/unique_lock.h:
+
+/usr/include/c++/15/ctime:
+
+/usr/include/c++/15/stdlib.h:
+
+/usr/include/c++/15/bits/ostream_insert.h:
+
+/usr/include/linux/types.h:
+
+/home/shivam/Desktop/CUSTOM\ VPN/server/forward.h:
+
+/usr/include/asm-generic/errno-base.h:
+
+/usr/include/sodium/randombytes.h:
+
+/usr/include/x86_64-linux-gnu/bits/types/time_t.h:
+
+/home/shivam/Desktop/CUSTOM\ VPN/crypto/replay_protection.h:
+
+/usr/include/sodium/crypto_secretstream_xchacha20poly1305.h:
+
+/usr/include/c++/15/pstl/execution_defs.h:
+
+/usr/include/sodium/core.h:
+
+/usr/include/arpa/inet.h:
+
+/usr/include/c++/15/bits/streambuf.tcc:
+
+/usr/include/c++/15/bits/basic_string.tcc:
+
+/usr/include/asm-generic/sockios.h:
+
+/usr/include/c++/15/bits/unique_ptr.h:
 
 /usr/lib/gcc/x86_64-linux-gnu/15/libgcc.a:
 
@@ -1102,115 +1249,33 @@ CMakeFiles/vpn_server.dir/server/forward.cpp.o:
 
 /usr/include/sodium/utils.h:
 
-/usr/include/asm-generic/errno-base.h:
+/usr/include/x86_64-linux-gnu/c++/15/bits/time_members.h:
 
-/usr/include/sodium/randombytes.h:
+/usr/include/c++/15/algorithm:
 
-/usr/include/x86_64-linux-gnu/bits/sigevent-consts.h:
+/usr/include/c++/15/bits/hash_bytes.h:
 
-/usr/include/c++/15/iosfwd:
-
-/usr/include/c++/15/bits/quoted_string.h:
-
-/usr/include/asm-generic/socket.h:
-
-/usr/include/x86_64-linux-gnu/bits/signum-generic.h:
-
-/usr/include/c++/15/bits/memoryfwd.h:
-
-/usr/lib/x86_64-linux-gnu/libm.so:
-
-/usr/include/asm-generic/int-ll64.h:
-
-/usr/include/c++/15/pstl/glue_algorithm_defs.h:
-
-/usr/include/c++/15/bits/charconv.h:
-
-/usr/lib/x86_64-linux-gnu/libmvec.so.1:
-
-/usr/include/c++/15/bits/stl_iterator_base_types.h:
-
-/usr/include/stdc-predef.h:
-
-/usr/include/c++/15/bits/hashtable.h:
-
-/usr/include/c++/15/bits/stl_uninitialized.h:
-
-/usr/include/sodium/crypto_box.h:
-
-/usr/include/linux/types.h:
-
-/home/shivam/Desktop/CUSTOM\ VPN/server/forward.h:
-
-/usr/include/c++/15/bits/ostream_insert.h:
-
-/usr/include/x86_64-linux-gnu/bits/signum-arch.h:
-
-/usr/include/x86_64-linux-gnu/bits/errno.h:
-
-/usr/include/x86_64-linux-gnu/bits/types/time_t.h:
-
-/home/shivam/Desktop/CUSTOM\ VPN/crypto/replay_protection.h:
-
-/usr/include/sodium/crypto_secretstream_xchacha20poly1305.h:
-
-/usr/include/c++/15/pstl/execution_defs.h:
-
-/usr/include/sodium/core.h:
-
-/usr/include/c++/15/locale:
-
-/usr/include/x86_64-linux-gnu/bits/long-double.h:
-
-/usr/include/c++/15/string_view:
-
-/usr/include/arpa/inet.h:
-
-/usr/include/c++/15/bits/streambuf.tcc:
-
-/usr/include/c++/15/bits/basic_string.tcc:
-
-/usr/include/c++/15/initializer_list:
-
-/usr/include/strings.h:
-
-/usr/include/signal.h:
-
-/usr/include/c++/15/ostream:
-
-/usr/include/c++/15/bits/exception.h:
-
-/usr/include/c++/15/istream:
-
-/home/shivam/Desktop/CUSTOM\ VPN/crypto/session_keys.h:
-
-/usr/include/asm-generic/sockios.h:
+/usr/include/c++/15/bits/locale_classes.tcc:
 
 /usr/include/c++/15/ext/aligned_buffer.h:
 
-/usr/include/c++/15/cwctype:
+/usr/include/c++/15/cctype:
 
-/usr/include/x86_64-linux-gnu/asm/types.h:
+/usr/include/sodium/crypto_pwhash_argon2id.h:
+
+CMakeFiles/vpn_server.dir/server/forward.cpp.o:
+
+/usr/include/c++/15/bits/stl_iterator.h:
+
+/usr/include/c++/15/bits/stl_pair.h:
+
+/usr/include/c++/15/bits/stl_bvector.h:
+
+/usr/include/c++/15/vector:
 
 /usr/include/linux/libc-compat.h:
 
 /usr/include/alloca.h:
-
-/usr/include/c++/15/bits/hashtable_policy.h:
-
-/usr/include/c++/15/ext/string_conversions.h:
-
-/usr/include/c++/15/bits/ostream.h:
-
-/usr/include/c++/15/bits/stringfwd.h:
-
-/usr/include/c++/15/bits/erase_if.h:
-
-/usr/include/c++/15/bits/alloc_traits.h:
-
-/usr/include/x86_64-linux-gnu/bits/types/FILE.h:
-
-/usr/include/netinet/tcp.h:
 
 /usr/include/c++/15/bits/std_abs.h:
 
@@ -1226,17 +1291,29 @@ CMakeFiles/vpn_server.dir/server/forward.cpp.o:
 
 /usr/include/sodium/crypto_verify_64.h:
 
-/usr/include/c++/15/bits/memory_resource.h:
-
 /usr/include/c++/15/bits/locale_facets_nonio.tcc:
 
 /usr/include/c++/15/bits/invoke.h:
 
-/usr/include/c++/15/new:
-
-/usr/include/linux/errno.h:
-
 /usr/include/sodium/randombytes_sysrandom.h:
+
+/usr/include/c++/15/bits/basic_ios.tcc:
+
+/usr/include/c++/15/bits/ostream.h:
+
+/usr/include/c++/15/bits/stringfwd.h:
+
+/usr/include/c++/15/bits/erase_if.h:
+
+/usr/include/c++/15/bits/alloc_traits.h:
+
+/usr/include/x86_64-linux-gnu/bits/types/FILE.h:
+
+/usr/include/netinet/tcp.h:
+
+/usr/include/x86_64-linux-gnu/bits/local_lim.h:
+
+/usr/include/c++/15/bits/codecvt.h:
 
 /usr/include/sodium/crypto_auth_hmacsha512256.h:
 
@@ -1286,6 +1363,8 @@ CMakeFiles/vpn_server.dir/server/forward.cpp.o:
 
 /usr/include/c++/15/bits/char_traits.h:
 
+/usr/include/c++/15/initializer_list:
+
 /usr/include/c++/15/bits/allocator.h:
 
 /usr/include/asm-generic/posix_types.h:
@@ -1294,17 +1373,9 @@ CMakeFiles/vpn_server.dir/server/forward.cpp.o:
 
 /usr/include/pthread.h:
 
-/usr/include/c++/15/iostream:
+/usr/include/c++/15/bits/functional_hash.h:
 
-/usr/include/c++/15/bits/vector.tcc:
-
-/usr/include/x86_64-linux-gnu/c++/15/bits/time_members.h:
-
-/usr/include/c++/15/algorithm:
-
-/usr/include/c++/15/bits/hash_bytes.h:
-
-/usr/include/c++/15/bits/locale_classes.tcc:
+/usr/include/c++/15/ext/type_traits.h:
 
 /usr/include/c++/15/bits/ios_base.h:
 
@@ -1324,19 +1395,57 @@ CMakeFiles/vpn_server.dir/server/forward.cpp.o:
 
 /usr/include/c++/15/bits/functexcept.h:
 
-/usr/include/c++/15/bits/localefwd.h:
+/usr/include/c++/15/bits/hashtable_policy.h:
 
-/usr/include/x86_64-linux-gnu/c++/15/bits/ctype_inline.h:
+/usr/include/c++/15/ext/string_conversions.h:
 
-/usr/include/c++/15/bits/move.h:
+/usr/include/c++/15/ios:
 
-/usr/include/sodium/crypto_onetimeauth.h:
+/usr/include/x86_64-linux-gnu/bits/sigevent-consts.h:
+
+/usr/include/c++/15/iosfwd:
+
+/usr/include/x86_64-linux-gnu/c++/15/bits/gthr-default.h:
+
+/usr/include/c++/15/limits:
+
+/usr/include/c++/15/bits/vector.tcc:
+
+/usr/include/c++/15/iostream:
+
+/home/shivam/Desktop/CUSTOM\ VPN/crypto/session_keys.h:
+
+/usr/include/c++/15/istream:
+
+/usr/include/c++/15/locale:
+
+/usr/include/x86_64-linux-gnu/bits/long-double.h:
+
+/usr/include/c++/15/string_view:
+
+/usr/include/linux/falloc.h:
+
+/usr/include/x86_64-linux-gnu/bits/in.h:
+
+/home/shivam/Desktop/CUSTOM\ VPN/server/forward.cpp:
+
+/usr/include/c++/15/mutex:
+
+/usr/include/linux/errno.h:
+
+/usr/include/c++/15/new:
+
+/usr/include/c++/15/thread:
+
+/usr/include/strings.h:
+
+/usr/include/signal.h:
+
+/usr/include/c++/15/bits/exception.h:
+
+/usr/include/c++/15/ostream:
 
 /usr/include/c++/15/pstl/pstl_config.h:
-
-/usr/include/c++/15/ctime:
-
-/usr/include/c++/15/stdlib.h:
 
 /usr/include/c++/15/string:
 
@@ -1354,6 +1463,12 @@ CMakeFiles/vpn_server.dir/server/forward.cpp.o:
 
 /usr/include/endian.h:
 
+/usr/include/sodium/crypto_auth_hmacsha512.h:
+
+/usr/include/c++/15/cstddef:
+
+/usr/include/errno.h:
+
 /usr/include/x86_64-linux-gnu/bits/openat2.h:
 
 /usr/include/features.h:
@@ -1368,19 +1483,11 @@ CMakeFiles/vpn_server.dir/server/forward.cpp.o:
 
 /usr/include/libintl.h:
 
-/usr/include/x86_64-linux-gnu/bits/endianness.h:
-
 /home/shivam/Desktop/CUSTOM\ VPN/crypto/packet_crypto.h:
 
 /usr/include/linux/posix_types.h:
 
 /usr/include/sodium/crypto_stream_salsa208.h:
-
-/usr/include/c++/15/bits/nested_exception.h:
-
-/usr/include/sodium/crypto_scalarmult_ed25519.h:
-
-/usr/include/linux/sched/types.h:
 
 /usr/include/c++/15/bits/locale_classes.h:
 
@@ -1388,7 +1495,11 @@ CMakeFiles/vpn_server.dir/server/forward.cpp.o:
 
 /usr/include/sodium/crypto_verify_16.h:
 
+/home/shivam/Desktop/CUSTOM\ VPN/tor/tor_manager.h:
+
 /usr/include/locale.h:
+
+/usr/include/c++/15/bits/std_thread.h:
 
 /usr/include/c++/15/debug/assertions.h:
 
@@ -1397,14 +1508,6 @@ CMakeFiles/vpn_server.dir/server/forward.cpp.o:
 /usr/include/c++/15/cerrno:
 
 /usr/include/netinet/in.h:
-
-/usr/include/x86_64-linux-gnu/bits/fcntl-linux.h:
-
-/usr/include/netinet/ip.h:
-
-/usr/include/c++/15/bits/codecvt.h:
-
-/usr/include/x86_64-linux-gnu/bits/local_lim.h:
 
 /usr/include/x86_64-linux-gnu/sys/single_threaded.h:
 
@@ -1452,11 +1555,13 @@ CMakeFiles/vpn_server.dir/server/forward.cpp.o:
 
 /usr/include/sodium/crypto_auth_hmacsha256.h:
 
-/usr/include/c++/15/cstddef:
+/usr/include/x86_64-linux-gnu/bits/cpu-set.h:
 
-/usr/include/errno.h:
+/usr/include/x86_64-linux-gnu/asm/posix_types_64.h:
 
-/usr/include/sodium/crypto_auth_hmacsha512.h:
+/usr/include/c++/15/bits/this_thread_sleep.h:
+
+/usr/include/sodium/crypto_core_hchacha20.h:
 
 /usr/include/x86_64-linux-gnu/bits/types/struct_timespec.h:
 
@@ -1471,6 +1576,10 @@ CMakeFiles/vpn_server.dir/server/forward.cpp.o:
 /usr/include/sodium/crypto_hash_sha256.h:
 
 /usr/include/sodium/crypto_hash_sha512.h:
+
+/usr/include/x86_64-linux-gnu/bits/libc-header-start.h:
+
+/usr/include/sodium/crypto_kdf.h:
 
 /usr/include/x86_64-linux-gnu/bits/thread-shared-types.h:
 
@@ -1494,17 +1603,7 @@ CMakeFiles/vpn_server.dir/server/forward.cpp.o:
 
 /usr/include/sodium/export.h:
 
-/usr/include/c++/15/cctype:
-
-/usr/include/sodium/crypto_pwhash_argon2id.h:
-
-/usr/include/sodium/crypto_scalarmult_curve25519.h:
-
 /usr/include/sodium/crypto_secretbox.h:
-
-/usr/include/sodium/crypto_aead_aes256gcm.h:
-
-/usr/include/x86_64-linux-gnu/bits/confname.h:
 
 /usr/include/sodium/crypto_secretbox_xchacha20poly1305.h:
 
@@ -1513,6 +1612,10 @@ CMakeFiles/vpn_server.dir/server/forward.cpp.o:
 /usr/include/sodium/crypto_sign.h:
 
 /usr/include/asm-generic/ioctl.h:
+
+/usr/include/c++/15/atomic:
+
+/usr/include/c++/15/ratio:
 
 /usr/include/c++/15/stdexcept:
 
@@ -1543,31 +1646,3 @@ CMakeFiles/vpn_server.dir/server/forward.cpp.o:
 /usr/include/sodium/crypto_kdf_blake2b.h:
 
 /usr/include/unistd.h:
-
-/usr/include/x86_64-linux-gnu/bits/byteswap.h:
-
-/usr/include/x86_64-linux-gnu/asm/posix_types_64.h:
-
-/usr/include/sodium/crypto_core_hchacha20.h:
-
-/usr/include/x86_64-linux-gnu/bits/cpu-set.h:
-
-/usr/include/c++/15/bits/unordered_map.h:
-
-/usr/include/x86_64-linux-gnu/bits/endian.h:
-
-/usr/include/x86_64-linux-gnu/bits/environments.h:
-
-/usr/include/x86_64-linux-gnu/bits/floatn.h:
-
-/usr/include/x86_64-linux-gnu/bits/getopt_core.h:
-
-/usr/include/linux/falloc.h:
-
-/home/shivam/Desktop/CUSTOM\ VPN/server/forward.cpp:
-
-/usr/include/x86_64-linux-gnu/bits/in.h:
-
-/usr/include/sodium/crypto_kdf.h:
-
-/usr/include/x86_64-linux-gnu/bits/libc-header-start.h:

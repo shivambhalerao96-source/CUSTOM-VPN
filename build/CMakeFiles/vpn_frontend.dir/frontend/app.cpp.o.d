@@ -560,10 +560,6 @@ CMakeFiles/vpn_frontend.dir/frontend/app.cpp.o: \
  /usr/include/x86_64-linux-gnu/qt6/QtCore/qstandardpaths.h \
  /usr/include/x86_64-linux-gnu/qt6/QtCore/QTimer \
  /usr/include/x86_64-linux-gnu/qt6/QtCore/qtimer.h \
- /usr/include/x86_64-linux-gnu/qt6/QtNetwork/QUdpSocket \
- /usr/include/x86_64-linux-gnu/qt6/QtNetwork/qudpsocket.h \
- /usr/include/x86_64-linux-gnu/qt6/QtNetwork/QHostAddress \
- /usr/include/x86_64-linux-gnu/qt6/QtNetwork/qhostaddress.h \
  /usr/include/x86_64-linux-gnu/qt6/QtWidgets/QVBoxLayout \
  /usr/include/x86_64-linux-gnu/qt6/QtWidgets/QWidget \
  /usr/include/x86_64-linux-gnu/qt6/QtWidgets/qwidget.h \

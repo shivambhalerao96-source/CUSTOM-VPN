@@ -297,4 +297,10 @@ CMakeFiles/vpn_client.dir/client/client1.cpp.o: \
  /home/shivam/Desktop/CUSTOM\ VPN/client/../crypto/session_keys.h \
  /home/shivam/Desktop/CUSTOM\ VPN/client/../crypto/handshake.h \
  /home/shivam/Desktop/CUSTOM\ VPN/client/../crypto/replay_protection.h \
- /home/shivam/Desktop/CUSTOM\ VPN/client/disconnect.h
+ /home/shivam/Desktop/CUSTOM\ VPN/client/disconnect.h \
+ /home/shivam/Desktop/CUSTOM\ VPN/client/../crypto/packet_crypto.h \
+ /home/shivam/Desktop/CUSTOM\ VPN/client/../crypto/session_keys.h \
+ /home/shivam/Desktop/CUSTOM\ VPN/client/../tor/tor_bridge.h \
+ /home/shivam/Desktop/CUSTOM\ VPN/client/../tor/tor_config.h \
+ /home/shivam/Desktop/CUSTOM\ VPN/client/../tor/tor_manager.h \
+ /home/shivam/Desktop/CUSTOM\ VPN/client/../tor/tor_config.h

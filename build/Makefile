@@ -169,6 +169,71 @@ vpn_frontend/fast:
 .PHONY : vpn_frontend/fast
 
 #=============================================================================
+# Target rules for targets named test_layer3
+
+# Build rule for target.
+test_layer3: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 test_layer3
+.PHONY : test_layer3
+
+# fast build rule for target.
+test_layer3/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_layer3.dir/build.make CMakeFiles/test_layer3.dir/build
+.PHONY : test_layer3/fast
+
+#=============================================================================
+# Target rules for targets named test_layer4
+
+# Build rule for target.
+test_layer4: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 test_layer4
+.PHONY : test_layer4
+
+# fast build rule for target.
+test_layer4/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_layer4.dir/build.make CMakeFiles/test_layer4.dir/build
+.PHONY : test_layer4/fast
+
+#=============================================================================
+# Target rules for targets named test_layer5
+
+# Build rule for target.
+test_layer5: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 test_layer5
+.PHONY : test_layer5
+
+# fast build rule for target.
+test_layer5/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_layer5.dir/build.make CMakeFiles/test_layer5.dir/build
+.PHONY : test_layer5/fast
+
+#=============================================================================
+# Target rules for targets named test_tor_manager
+
+# Build rule for target.
+test_tor_manager: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 test_tor_manager
+.PHONY : test_tor_manager
+
+# fast build rule for target.
+test_tor_manager/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_tor_manager.dir/build.make CMakeFiles/test_tor_manager.dir/build
+.PHONY : test_tor_manager/fast
+
+#=============================================================================
+# Target rules for targets named test_tor_e2e
+
+# Build rule for target.
+test_tor_e2e: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 test_tor_e2e
+.PHONY : test_tor_e2e
+
+# fast build rule for target.
+test_tor_e2e/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_tor_e2e.dir/build.make CMakeFiles/test_tor_e2e.dir/build
+.PHONY : test_tor_e2e/fast
+
+#=============================================================================
 # Target rules for targets named vpn_frontend_autogen_timestamp_deps
 
 # Build rule for target.
@@ -434,6 +499,198 @@ server/server.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/vpn_server.dir/build.make CMakeFiles/vpn_server.dir/server/server.cpp.s
 .PHONY : server/server.cpp.s
 
+tests/layer3_test.o: tests/layer3_test.cpp.o
+.PHONY : tests/layer3_test.o
+
+# target to build an object file
+tests/layer3_test.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_layer3.dir/build.make CMakeFiles/test_layer3.dir/tests/layer3_test.cpp.o
+.PHONY : tests/layer3_test.cpp.o
+
+tests/layer3_test.i: tests/layer3_test.cpp.i
+.PHONY : tests/layer3_test.i
+
+# target to preprocess a source file
+tests/layer3_test.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_layer3.dir/build.make CMakeFiles/test_layer3.dir/tests/layer3_test.cpp.i
+.PHONY : tests/layer3_test.cpp.i
+
+tests/layer3_test.s: tests/layer3_test.cpp.s
+.PHONY : tests/layer3_test.s
+
+# target to generate assembly for a file
+tests/layer3_test.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_layer3.dir/build.make CMakeFiles/test_layer3.dir/tests/layer3_test.cpp.s
+.PHONY : tests/layer3_test.cpp.s
+
+tests/layer4_test.o: tests/layer4_test.cpp.o
+.PHONY : tests/layer4_test.o
+
+# target to build an object file
+tests/layer4_test.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_layer4.dir/build.make CMakeFiles/test_layer4.dir/tests/layer4_test.cpp.o
+.PHONY : tests/layer4_test.cpp.o
+
+tests/layer4_test.i: tests/layer4_test.cpp.i
+.PHONY : tests/layer4_test.i
+
+# target to preprocess a source file
+tests/layer4_test.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_layer4.dir/build.make CMakeFiles/test_layer4.dir/tests/layer4_test.cpp.i
+.PHONY : tests/layer4_test.cpp.i
+
+tests/layer4_test.s: tests/layer4_test.cpp.s
+.PHONY : tests/layer4_test.s
+
+# target to generate assembly for a file
+tests/layer4_test.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_layer4.dir/build.make CMakeFiles/test_layer4.dir/tests/layer4_test.cpp.s
+.PHONY : tests/layer4_test.cpp.s
+
+tests/layer5_test.o: tests/layer5_test.cpp.o
+.PHONY : tests/layer5_test.o
+
+# target to build an object file
+tests/layer5_test.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_layer5.dir/build.make CMakeFiles/test_layer5.dir/tests/layer5_test.cpp.o
+.PHONY : tests/layer5_test.cpp.o
+
+tests/layer5_test.i: tests/layer5_test.cpp.i
+.PHONY : tests/layer5_test.i
+
+# target to preprocess a source file
+tests/layer5_test.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_layer5.dir/build.make CMakeFiles/test_layer5.dir/tests/layer5_test.cpp.i
+.PHONY : tests/layer5_test.cpp.i
+
+tests/layer5_test.s: tests/layer5_test.cpp.s
+.PHONY : tests/layer5_test.s
+
+# target to generate assembly for a file
+tests/layer5_test.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_layer5.dir/build.make CMakeFiles/test_layer5.dir/tests/layer5_test.cpp.s
+.PHONY : tests/layer5_test.cpp.s
+
+tests/tor_e2e_test.o: tests/tor_e2e_test.cpp.o
+.PHONY : tests/tor_e2e_test.o
+
+# target to build an object file
+tests/tor_e2e_test.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_tor_e2e.dir/build.make CMakeFiles/test_tor_e2e.dir/tests/tor_e2e_test.cpp.o
+.PHONY : tests/tor_e2e_test.cpp.o
+
+tests/tor_e2e_test.i: tests/tor_e2e_test.cpp.i
+.PHONY : tests/tor_e2e_test.i
+
+# target to preprocess a source file
+tests/tor_e2e_test.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_tor_e2e.dir/build.make CMakeFiles/test_tor_e2e.dir/tests/tor_e2e_test.cpp.i
+.PHONY : tests/tor_e2e_test.cpp.i
+
+tests/tor_e2e_test.s: tests/tor_e2e_test.cpp.s
+.PHONY : tests/tor_e2e_test.s
+
+# target to generate assembly for a file
+tests/tor_e2e_test.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_tor_e2e.dir/build.make CMakeFiles/test_tor_e2e.dir/tests/tor_e2e_test.cpp.s
+.PHONY : tests/tor_e2e_test.cpp.s
+
+tests/tor_manager_test.o: tests/tor_manager_test.cpp.o
+.PHONY : tests/tor_manager_test.o
+
+# target to build an object file
+tests/tor_manager_test.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_tor_manager.dir/build.make CMakeFiles/test_tor_manager.dir/tests/tor_manager_test.cpp.o
+.PHONY : tests/tor_manager_test.cpp.o
+
+tests/tor_manager_test.i: tests/tor_manager_test.cpp.i
+.PHONY : tests/tor_manager_test.i
+
+# target to preprocess a source file
+tests/tor_manager_test.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_tor_manager.dir/build.make CMakeFiles/test_tor_manager.dir/tests/tor_manager_test.cpp.i
+.PHONY : tests/tor_manager_test.cpp.i
+
+tests/tor_manager_test.s: tests/tor_manager_test.cpp.s
+.PHONY : tests/tor_manager_test.s
+
+# target to generate assembly for a file
+tests/tor_manager_test.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_tor_manager.dir/build.make CMakeFiles/test_tor_manager.dir/tests/tor_manager_test.cpp.s
+.PHONY : tests/tor_manager_test.cpp.s
+
+tor/tor_bridge.o: tor/tor_bridge.cpp.o
+.PHONY : tor/tor_bridge.o
+
+# target to build an object file
+tor/tor_bridge.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/vpn_core_objects.dir/build.make CMakeFiles/vpn_core_objects.dir/tor/tor_bridge.cpp.o
+.PHONY : tor/tor_bridge.cpp.o
+
+tor/tor_bridge.i: tor/tor_bridge.cpp.i
+.PHONY : tor/tor_bridge.i
+
+# target to preprocess a source file
+tor/tor_bridge.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/vpn_core_objects.dir/build.make CMakeFiles/vpn_core_objects.dir/tor/tor_bridge.cpp.i
+.PHONY : tor/tor_bridge.cpp.i
+
+tor/tor_bridge.s: tor/tor_bridge.cpp.s
+.PHONY : tor/tor_bridge.s
+
+# target to generate assembly for a file
+tor/tor_bridge.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/vpn_core_objects.dir/build.make CMakeFiles/vpn_core_objects.dir/tor/tor_bridge.cpp.s
+.PHONY : tor/tor_bridge.cpp.s
+
+tor/tor_config.o: tor/tor_config.cpp.o
+.PHONY : tor/tor_config.o
+
+# target to build an object file
+tor/tor_config.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/vpn_core_objects.dir/build.make CMakeFiles/vpn_core_objects.dir/tor/tor_config.cpp.o
+.PHONY : tor/tor_config.cpp.o
+
+tor/tor_config.i: tor/tor_config.cpp.i
+.PHONY : tor/tor_config.i
+
+# target to preprocess a source file
+tor/tor_config.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/vpn_core_objects.dir/build.make CMakeFiles/vpn_core_objects.dir/tor/tor_config.cpp.i
+.PHONY : tor/tor_config.cpp.i
+
+tor/tor_config.s: tor/tor_config.cpp.s
+.PHONY : tor/tor_config.s
+
+# target to generate assembly for a file
+tor/tor_config.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/vpn_core_objects.dir/build.make CMakeFiles/vpn_core_objects.dir/tor/tor_config.cpp.s
+.PHONY : tor/tor_config.cpp.s
+
+tor/tor_manager.o: tor/tor_manager.cpp.o
+.PHONY : tor/tor_manager.o
+
+# target to build an object file
+tor/tor_manager.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/vpn_core_objects.dir/build.make CMakeFiles/vpn_core_objects.dir/tor/tor_manager.cpp.o
+.PHONY : tor/tor_manager.cpp.o
+
+tor/tor_manager.i: tor/tor_manager.cpp.i
+.PHONY : tor/tor_manager.i
+
+# target to preprocess a source file
+tor/tor_manager.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/vpn_core_objects.dir/build.make CMakeFiles/vpn_core_objects.dir/tor/tor_manager.cpp.i
+.PHONY : tor/tor_manager.cpp.i
+
+tor/tor_manager.s: tor/tor_manager.cpp.s
+.PHONY : tor/tor_manager.s
+
+# target to generate assembly for a file
+tor/tor_manager.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/vpn_core_objects.dir/build.make CMakeFiles/vpn_core_objects.dir/tor/tor_manager.cpp.s
+.PHONY : tor/tor_manager.cpp.s
+
 tun/setup.o: tun/setup.cpp.o
 .PHONY : tun/setup.o
 
@@ -492,6 +749,11 @@ help:
 	@echo "... rebuild_cache"
 	@echo "... vpn_frontend_autogen"
 	@echo "... vpn_frontend_autogen_timestamp_deps"
+	@echo "... test_layer3"
+	@echo "... test_layer4"
+	@echo "... test_layer5"
+	@echo "... test_tor_e2e"
+	@echo "... test_tor_manager"
 	@echo "... vpn_client"
 	@echo "... vpn_core_objects"
 	@echo "... vpn_frontend"
@@ -526,6 +788,30 @@ help:
 	@echo "... server/server.o"
 	@echo "... server/server.i"
 	@echo "... server/server.s"
+	@echo "... tests/layer3_test.o"
+	@echo "... tests/layer3_test.i"
+	@echo "... tests/layer3_test.s"
+	@echo "... tests/layer4_test.o"
+	@echo "... tests/layer4_test.i"
+	@echo "... tests/layer4_test.s"
+	@echo "... tests/layer5_test.o"
+	@echo "... tests/layer5_test.i"
+	@echo "... tests/layer5_test.s"
+	@echo "... tests/tor_e2e_test.o"
+	@echo "... tests/tor_e2e_test.i"
+	@echo "... tests/tor_e2e_test.s"
+	@echo "... tests/tor_manager_test.o"
+	@echo "... tests/tor_manager_test.i"
+	@echo "... tests/tor_manager_test.s"
+	@echo "... tor/tor_bridge.o"
+	@echo "... tor/tor_bridge.i"
+	@echo "... tor/tor_bridge.s"
+	@echo "... tor/tor_config.o"
+	@echo "... tor/tor_config.i"
+	@echo "... tor/tor_config.s"
+	@echo "... tor/tor_manager.o"
+	@echo "... tor/tor_manager.i"
+	@echo "... tor/tor_manager.s"
 	@echo "... tun/setup.o"
 	@echo "... tun/setup.i"
 	@echo "... tun/setup.s"

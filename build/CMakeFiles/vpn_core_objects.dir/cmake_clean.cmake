@@ -7,6 +7,12 @@ file(REMOVE_RECURSE
   "CMakeFiles/vpn_core_objects.dir/crypto/replay_protection.cpp.o.d"
   "CMakeFiles/vpn_core_objects.dir/crypto/session_keys.cpp.o"
   "CMakeFiles/vpn_core_objects.dir/crypto/session_keys.cpp.o.d"
+  "CMakeFiles/vpn_core_objects.dir/tor/tor_bridge.cpp.o"
+  "CMakeFiles/vpn_core_objects.dir/tor/tor_bridge.cpp.o.d"
+  "CMakeFiles/vpn_core_objects.dir/tor/tor_config.cpp.o"
+  "CMakeFiles/vpn_core_objects.dir/tor/tor_config.cpp.o.d"
+  "CMakeFiles/vpn_core_objects.dir/tor/tor_manager.cpp.o"
+  "CMakeFiles/vpn_core_objects.dir/tor/tor_manager.cpp.o.d"
   "CMakeFiles/vpn_core_objects.dir/tun/setup.cpp.o"
   "CMakeFiles/vpn_core_objects.dir/tun/setup.cpp.o.d"
 )

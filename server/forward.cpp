@@ -3,6 +3,8 @@
 #include "../crypto/packet_crypto.h"
 #include "../crypto/session_keys.h"
 #include "../crypto/replay_protection.h"
+#include "../tor/tor_manager.h"
+#include "../tor/tor_config.h"
 #include <iostream>
 #include <sys/socket.h>
 #include <arpa/inet.h>
@@ -506,7 +508,8 @@ void startForwarding(int sockfd, int tun_fd)
                         continue;
                     }
 
-                    if (string(plaintext.begin(), plaintext.end()) == "VPN_DISCONNECT")
+                    string controlMessage(plaintext.begin(), plaintext.end());
+                    if (controlMessage == "VPN_DISCONNECT")
                     {
                         vector<unsigned char> encryptedResponse;
                         const unsigned char response[] = "VPN_DISCONNECT";
@@ -536,6 +539,88 @@ void startForwarding(int sockfd, int tun_fd)
 
                         vpn_ipv6_to_ipv4.erase(client->second.vpnIPv6);
                         vpn_ip.erase(client);
+                        continue;
+                    }
+                    else if (controlMessage == "VPN_TOR_ON")
+                    {
+                        customvpn::TorManager::getInstance().startTor();
+                        string statusMsg = "TOR_STATUS " + customvpn::TorManager::getInstance().getStatusString();
+                        if (customvpn::TorManager::getInstance().getStatus() == customvpn::TorStatus::Error)
+                        {
+                            statusMsg += " " + customvpn::TorManager::getInstance().getErrorMessage();
+                        }
+
+                        vector<unsigned char> encryptedResponse;
+                        uint64_t responseSequence = 0;
+                        if (client->second.serverToClientSequence.nextSequence(responseSequence) &&
+                            encryptSequencedVpnPacket(
+                                responseSequence,
+                                reinterpret_cast<const unsigned char*>(statusMsg.data()),
+                                statusMsg.size(),
+                                client->second.sessionKeys.serverToClient,
+                                encryptedResponse))
+                        {
+                            sendto(
+                                sockfd,
+                                encryptedResponse.data(),
+                                encryptedResponse.size(),
+                                0,
+                                (sockaddr*)&clientAddress,
+                                clientLength);
+                        }
+                        continue;
+                    }
+                    else if (controlMessage == "VPN_TOR_OFF")
+                    {
+                        customvpn::TorManager::getInstance().stopTor();
+                        string statusMsg = "TOR_STATUS " + customvpn::TorManager::getInstance().getStatusString();
+
+                        vector<unsigned char> encryptedResponse;
+                        uint64_t responseSequence = 0;
+                        if (client->second.serverToClientSequence.nextSequence(responseSequence) &&
+                            encryptSequencedVpnPacket(
+                                responseSequence,
+                                reinterpret_cast<const unsigned char*>(statusMsg.data()),
+                                statusMsg.size(),
+                                client->second.sessionKeys.serverToClient,
+                                encryptedResponse))
+                        {
+                            sendto(
+                                sockfd,
+                                encryptedResponse.data(),
+                                encryptedResponse.size(),
+                                0,
+                                (sockaddr*)&clientAddress,
+                                clientLength);
+                        }
+                        continue;
+                    }
+                    else if (controlMessage == "VPN_TOR_STATUS")
+                    {
+                        string statusMsg = "TOR_STATUS " + customvpn::TorManager::getInstance().getStatusString();
+                        if (customvpn::TorManager::getInstance().getStatus() == customvpn::TorStatus::Error)
+                        {
+                            statusMsg += " " + customvpn::TorManager::getInstance().getErrorMessage();
+                        }
+
+                        vector<unsigned char> encryptedResponse;
+                        uint64_t responseSequence = 0;
+                        if (client->second.serverToClientSequence.nextSequence(responseSequence) &&
+                            encryptSequencedVpnPacket(
+                                responseSequence,
+                                reinterpret_cast<const unsigned char*>(statusMsg.data()),
+                                statusMsg.size(),
+                                client->second.sessionKeys.serverToClient,
+                                encryptedResponse))
+                        {
+                            sendto(
+                                sockfd,
+                                encryptedResponse.data(),
+                                encryptedResponse.size(),
+                                0,
+                                (sockaddr*)&clientAddress,
+                                clientLength);
+                        }
                         continue;
                     }
 

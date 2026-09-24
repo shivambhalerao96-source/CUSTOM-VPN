@@ -12,6 +12,9 @@ set(CMAKE_DEPENDS_DEPENDENCY_FILES
   "/home/shivam/Desktop/CUSTOM VPN/crypto/packet_crypto.cpp" "CMakeFiles/vpn_core_objects.dir/crypto/packet_crypto.cpp.o" "gcc" "CMakeFiles/vpn_core_objects.dir/crypto/packet_crypto.cpp.o.d"
   "/home/shivam/Desktop/CUSTOM VPN/crypto/replay_protection.cpp" "CMakeFiles/vpn_core_objects.dir/crypto/replay_protection.cpp.o" "gcc" "CMakeFiles/vpn_core_objects.dir/crypto/replay_protection.cpp.o.d"
   "/home/shivam/Desktop/CUSTOM VPN/crypto/session_keys.cpp" "CMakeFiles/vpn_core_objects.dir/crypto/session_keys.cpp.o" "gcc" "CMakeFiles/vpn_core_objects.dir/crypto/session_keys.cpp.o.d"
+  "/home/shivam/Desktop/CUSTOM VPN/tor/tor_bridge.cpp" "CMakeFiles/vpn_core_objects.dir/tor/tor_bridge.cpp.o" "gcc" "CMakeFiles/vpn_core_objects.dir/tor/tor_bridge.cpp.o.d"
+  "/home/shivam/Desktop/CUSTOM VPN/tor/tor_config.cpp" "CMakeFiles/vpn_core_objects.dir/tor/tor_config.cpp.o" "gcc" "CMakeFiles/vpn_core_objects.dir/tor/tor_config.cpp.o.d"
+  "/home/shivam/Desktop/CUSTOM VPN/tor/tor_manager.cpp" "CMakeFiles/vpn_core_objects.dir/tor/tor_manager.cpp.o" "gcc" "CMakeFiles/vpn_core_objects.dir/tor/tor_manager.cpp.o.d"
   "/home/shivam/Desktop/CUSTOM VPN/tun/setup.cpp" "CMakeFiles/vpn_core_objects.dir/tun/setup.cpp.o" "gcc" "CMakeFiles/vpn_core_objects.dir/tun/setup.cpp.o.d"
   )
 

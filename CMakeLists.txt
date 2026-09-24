@@ -36,6 +36,9 @@ add_library(vpn_core_objects OBJECT
     crypto/packet_crypto.cpp
     crypto/replay_protection.cpp
     tun/setup.cpp
+    tor/tor_config.cpp
+    tor/tor_manager.cpp
+    tor/tor_bridge.cpp
 )
 
 target_include_directories(vpn_core_objects
@@ -43,6 +46,7 @@ target_include_directories(vpn_core_objects
         ${CMAKE_CURRENT_SOURCE_DIR}
         ${CMAKE_CURRENT_SOURCE_DIR}/crypto
         ${CMAKE_CURRENT_SOURCE_DIR}/tun
+        ${CMAKE_CURRENT_SOURCE_DIR}/tor
 )
 
 target_link_libraries(vpn_core_objects
@@ -87,8 +91,42 @@ endif()
 
 set_target_properties(vpn_client PROPERTIES OUTPUT_NAME vpn_client)
 set_target_properties(vpn_server PROPERTIES OUTPUT_NAME vpn_server1)
-set_target_properties(vpn_frontend PROPERTIES OUTPUT_NAME vpn_frontend)
+if(BUILD_FRONTEND)
+    set_target_properties(vpn_frontend PROPERTIES OUTPUT_NAME vpn_frontend)
+endif()
 
-set_target_properties(vpn_client vpn_server vpn_frontend PROPERTIES
+option(BUILD_TESTS "Build validation and integration tests" ON)
+if(BUILD_TESTS)
+    add_executable(test_layer3 tests/layer3_test.cpp $<TARGET_OBJECTS:vpn_core_objects>)
+    target_link_libraries(test_layer3 PRIVATE CustomVPN::Sodium Threads::Threads)
+    target_include_directories(test_layer3 PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/crypto)
+
+    add_executable(test_layer4 tests/layer4_test.cpp $<TARGET_OBJECTS:vpn_core_objects>)
+    target_link_libraries(test_layer4 PRIVATE CustomVPN::Sodium Threads::Threads)
+    target_include_directories(test_layer4 PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/crypto)
+
+    add_executable(test_layer5 tests/layer5_test.cpp $<TARGET_OBJECTS:vpn_core_objects>)
+    target_link_libraries(test_layer5 PRIVATE CustomVPN::Sodium Threads::Threads)
+    target_include_directories(test_layer5 PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/crypto)
+
+    add_executable(test_tor_manager tests/tor_manager_test.cpp $<TARGET_OBJECTS:vpn_core_objects>)
+    target_link_libraries(test_tor_manager PRIVATE CustomVPN::Sodium Threads::Threads)
+    target_include_directories(test_tor_manager PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/tor)
+
+    add_executable(test_tor_e2e tests/tor_e2e_test.cpp $<TARGET_OBJECTS:vpn_core_objects>)
+    target_link_libraries(test_tor_e2e PRIVATE CustomVPN::Sodium Threads::Threads)
+    target_include_directories(test_tor_e2e PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/tor)
+
+    set_target_properties(test_layer3 test_layer4 test_layer5 test_tor_manager test_tor_e2e PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
+    )
+endif()
+
+set_target_properties(vpn_client vpn_server PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
 )
+if(BUILD_FRONTEND)
+    set_target_properties(vpn_frontend PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
+    )
+endif()

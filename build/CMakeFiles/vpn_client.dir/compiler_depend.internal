@@ -4,8 +4,12 @@
 CMakeFiles/vpn_client.dir/client/client1.cpp.o
  /home/shivam/Desktop/CUSTOM VPN/client/client1.cpp
  /home/shivam/Desktop/CUSTOM VPN/crypto/handshake.h
+ /home/shivam/Desktop/CUSTOM VPN/crypto/packet_crypto.h
  /home/shivam/Desktop/CUSTOM VPN/crypto/replay_protection.h
  /home/shivam/Desktop/CUSTOM VPN/crypto/session_keys.h
+ /home/shivam/Desktop/CUSTOM VPN/tor/tor_bridge.h
+ /home/shivam/Desktop/CUSTOM VPN/tor/tor_config.h
+ /home/shivam/Desktop/CUSTOM VPN/tor/tor_manager.h
  /home/shivam/Desktop/CUSTOM VPN/tun/setup.h
  /home/shivam/Desktop/CUSTOM VPN/client/disconnect.h
  /home/shivam/Desktop/CUSTOM VPN/client/transport.h
@@ -1022,5 +1026,8 @@ vpn_client
  /home/shivam/Desktop/CUSTOM VPN/build/CMakeFiles/vpn_core_objects.dir/crypto/packet_crypto.cpp.o
  /home/shivam/Desktop/CUSTOM VPN/build/CMakeFiles/vpn_core_objects.dir/crypto/replay_protection.cpp.o
  /home/shivam/Desktop/CUSTOM VPN/build/CMakeFiles/vpn_core_objects.dir/crypto/session_keys.cpp.o
+ /home/shivam/Desktop/CUSTOM VPN/build/CMakeFiles/vpn_core_objects.dir/tor/tor_bridge.cpp.o
+ /home/shivam/Desktop/CUSTOM VPN/build/CMakeFiles/vpn_core_objects.dir/tor/tor_config.cpp.o
+ /home/shivam/Desktop/CUSTOM VPN/build/CMakeFiles/vpn_core_objects.dir/tor/tor_manager.cpp.o
  /home/shivam/Desktop/CUSTOM VPN/build/CMakeFiles/vpn_core_objects.dir/tun/setup.cpp.o
 

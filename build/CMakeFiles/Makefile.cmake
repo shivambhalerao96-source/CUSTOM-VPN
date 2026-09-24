@@ -194,6 +194,11 @@ set(CMAKE_DEPEND_INFO_FILES
   "CMakeFiles/vpn_client.dir/DependInfo.cmake"
   "CMakeFiles/vpn_server.dir/DependInfo.cmake"
   "CMakeFiles/vpn_frontend.dir/DependInfo.cmake"
+  "CMakeFiles/test_layer3.dir/DependInfo.cmake"
+  "CMakeFiles/test_layer4.dir/DependInfo.cmake"
+  "CMakeFiles/test_layer5.dir/DependInfo.cmake"
+  "CMakeFiles/test_tor_manager.dir/DependInfo.cmake"
+  "CMakeFiles/test_tor_e2e.dir/DependInfo.cmake"
   "CMakeFiles/vpn_frontend_autogen_timestamp_deps.dir/DependInfo.cmake"
   "CMakeFiles/vpn_frontend_autogen.dir/DependInfo.cmake"
   )

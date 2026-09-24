@@ -142,11 +142,56 @@ CMakeFiles/vpn_core_objects.dir/tun/setup.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/vpn_core_objects.dir/tun/setup.cpp.s"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S "/home/shivam/Desktop/CUSTOM VPN/tun/setup.cpp" -o CMakeFiles/vpn_core_objects.dir/tun/setup.cpp.s
 
+CMakeFiles/vpn_core_objects.dir/tor/tor_config.cpp.o: CMakeFiles/vpn_core_objects.dir/flags.make
+CMakeFiles/vpn_core_objects.dir/tor/tor_config.cpp.o: /home/shivam/Desktop/CUSTOM\ VPN/tor/tor_config.cpp
+CMakeFiles/vpn_core_objects.dir/tor/tor_config.cpp.o: CMakeFiles/vpn_core_objects.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir="/home/shivam/Desktop/CUSTOM VPN/build/CMakeFiles" --progress-num=$(CMAKE_PROGRESS_6) "Building CXX object CMakeFiles/vpn_core_objects.dir/tor/tor_config.cpp.o"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/vpn_core_objects.dir/tor/tor_config.cpp.o -MF CMakeFiles/vpn_core_objects.dir/tor/tor_config.cpp.o.d -o CMakeFiles/vpn_core_objects.dir/tor/tor_config.cpp.o -c "/home/shivam/Desktop/CUSTOM VPN/tor/tor_config.cpp"
+
+CMakeFiles/vpn_core_objects.dir/tor/tor_config.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/vpn_core_objects.dir/tor/tor_config.cpp.i"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E "/home/shivam/Desktop/CUSTOM VPN/tor/tor_config.cpp" > CMakeFiles/vpn_core_objects.dir/tor/tor_config.cpp.i
+
+CMakeFiles/vpn_core_objects.dir/tor/tor_config.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/vpn_core_objects.dir/tor/tor_config.cpp.s"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S "/home/shivam/Desktop/CUSTOM VPN/tor/tor_config.cpp" -o CMakeFiles/vpn_core_objects.dir/tor/tor_config.cpp.s
+
+CMakeFiles/vpn_core_objects.dir/tor/tor_manager.cpp.o: CMakeFiles/vpn_core_objects.dir/flags.make
+CMakeFiles/vpn_core_objects.dir/tor/tor_manager.cpp.o: /home/shivam/Desktop/CUSTOM\ VPN/tor/tor_manager.cpp
+CMakeFiles/vpn_core_objects.dir/tor/tor_manager.cpp.o: CMakeFiles/vpn_core_objects.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir="/home/shivam/Desktop/CUSTOM VPN/build/CMakeFiles" --progress-num=$(CMAKE_PROGRESS_7) "Building CXX object CMakeFiles/vpn_core_objects.dir/tor/tor_manager.cpp.o"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/vpn_core_objects.dir/tor/tor_manager.cpp.o -MF CMakeFiles/vpn_core_objects.dir/tor/tor_manager.cpp.o.d -o CMakeFiles/vpn_core_objects.dir/tor/tor_manager.cpp.o -c "/home/shivam/Desktop/CUSTOM VPN/tor/tor_manager.cpp"
+
+CMakeFiles/vpn_core_objects.dir/tor/tor_manager.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/vpn_core_objects.dir/tor/tor_manager.cpp.i"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E "/home/shivam/Desktop/CUSTOM VPN/tor/tor_manager.cpp" > CMakeFiles/vpn_core_objects.dir/tor/tor_manager.cpp.i
+
+CMakeFiles/vpn_core_objects.dir/tor/tor_manager.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/vpn_core_objects.dir/tor/tor_manager.cpp.s"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S "/home/shivam/Desktop/CUSTOM VPN/tor/tor_manager.cpp" -o CMakeFiles/vpn_core_objects.dir/tor/tor_manager.cpp.s
+
+CMakeFiles/vpn_core_objects.dir/tor/tor_bridge.cpp.o: CMakeFiles/vpn_core_objects.dir/flags.make
+CMakeFiles/vpn_core_objects.dir/tor/tor_bridge.cpp.o: /home/shivam/Desktop/CUSTOM\ VPN/tor/tor_bridge.cpp
+CMakeFiles/vpn_core_objects.dir/tor/tor_bridge.cpp.o: CMakeFiles/vpn_core_objects.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir="/home/shivam/Desktop/CUSTOM VPN/build/CMakeFiles" --progress-num=$(CMAKE_PROGRESS_8) "Building CXX object CMakeFiles/vpn_core_objects.dir/tor/tor_bridge.cpp.o"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/vpn_core_objects.dir/tor/tor_bridge.cpp.o -MF CMakeFiles/vpn_core_objects.dir/tor/tor_bridge.cpp.o.d -o CMakeFiles/vpn_core_objects.dir/tor/tor_bridge.cpp.o -c "/home/shivam/Desktop/CUSTOM VPN/tor/tor_bridge.cpp"
+
+CMakeFiles/vpn_core_objects.dir/tor/tor_bridge.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/vpn_core_objects.dir/tor/tor_bridge.cpp.i"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E "/home/shivam/Desktop/CUSTOM VPN/tor/tor_bridge.cpp" > CMakeFiles/vpn_core_objects.dir/tor/tor_bridge.cpp.i
+
+CMakeFiles/vpn_core_objects.dir/tor/tor_bridge.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/vpn_core_objects.dir/tor/tor_bridge.cpp.s"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S "/home/shivam/Desktop/CUSTOM VPN/tor/tor_bridge.cpp" -o CMakeFiles/vpn_core_objects.dir/tor/tor_bridge.cpp.s
+
 vpn_core_objects: CMakeFiles/vpn_core_objects.dir/crypto/handshake.cpp.o
 vpn_core_objects: CMakeFiles/vpn_core_objects.dir/crypto/session_keys.cpp.o
 vpn_core_objects: CMakeFiles/vpn_core_objects.dir/crypto/packet_crypto.cpp.o
 vpn_core_objects: CMakeFiles/vpn_core_objects.dir/crypto/replay_protection.cpp.o
 vpn_core_objects: CMakeFiles/vpn_core_objects.dir/tun/setup.cpp.o
+vpn_core_objects: CMakeFiles/vpn_core_objects.dir/tor/tor_config.cpp.o
+vpn_core_objects: CMakeFiles/vpn_core_objects.dir/tor/tor_manager.cpp.o
+vpn_core_objects: CMakeFiles/vpn_core_objects.dir/tor/tor_bridge.cpp.o
 vpn_core_objects: CMakeFiles/vpn_core_objects.dir/build.make
 .PHONY : vpn_core_objects
 

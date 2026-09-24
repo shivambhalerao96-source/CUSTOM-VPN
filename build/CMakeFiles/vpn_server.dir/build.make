@@ -111,7 +111,10 @@ vpn_server_EXTERNAL_OBJECTS = \
 "/home/shivam/Desktop/CUSTOM VPN/build/CMakeFiles/vpn_core_objects.dir/crypto/session_keys.cpp.o" \
 "/home/shivam/Desktop/CUSTOM VPN/build/CMakeFiles/vpn_core_objects.dir/crypto/packet_crypto.cpp.o" \
 "/home/shivam/Desktop/CUSTOM VPN/build/CMakeFiles/vpn_core_objects.dir/crypto/replay_protection.cpp.o" \
-"/home/shivam/Desktop/CUSTOM VPN/build/CMakeFiles/vpn_core_objects.dir/tun/setup.cpp.o"
+"/home/shivam/Desktop/CUSTOM VPN/build/CMakeFiles/vpn_core_objects.dir/tun/setup.cpp.o" \
+"/home/shivam/Desktop/CUSTOM VPN/build/CMakeFiles/vpn_core_objects.dir/tor/tor_config.cpp.o" \
+"/home/shivam/Desktop/CUSTOM VPN/build/CMakeFiles/vpn_core_objects.dir/tor/tor_manager.cpp.o" \
+"/home/shivam/Desktop/CUSTOM VPN/build/CMakeFiles/vpn_core_objects.dir/tor/tor_bridge.cpp.o"
 
 vpn_server1: CMakeFiles/vpn_server.dir/server/server.cpp.o
 vpn_server1: CMakeFiles/vpn_server.dir/server/forward.cpp.o
@@ -120,6 +123,9 @@ vpn_server1: CMakeFiles/vpn_core_objects.dir/crypto/session_keys.cpp.o
 vpn_server1: CMakeFiles/vpn_core_objects.dir/crypto/packet_crypto.cpp.o
 vpn_server1: CMakeFiles/vpn_core_objects.dir/crypto/replay_protection.cpp.o
 vpn_server1: CMakeFiles/vpn_core_objects.dir/tun/setup.cpp.o
+vpn_server1: CMakeFiles/vpn_core_objects.dir/tor/tor_config.cpp.o
+vpn_server1: CMakeFiles/vpn_core_objects.dir/tor/tor_manager.cpp.o
+vpn_server1: CMakeFiles/vpn_core_objects.dir/tor/tor_bridge.cpp.o
 vpn_server1: CMakeFiles/vpn_server.dir/build.make
 vpn_server1: CMakeFiles/vpn_server.dir/compiler_depend.ts
 vpn_server1: /usr/lib/x86_64-linux-gnu/libsodium.so

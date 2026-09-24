@@ -730,14 +730,12 @@ CMakeFiles/vpn_frontend.dir/frontend/app.cpp.o: /home/shivam/Desktop/CUSTOM\ VPN
   /usr/include/x86_64-linux-gnu/qt6/QtGui/qtransform.h \
   /usr/include/x86_64-linux-gnu/qt6/QtGui/qvalidator.h \
   /usr/include/x86_64-linux-gnu/qt6/QtGui/qwindowdefs.h \
-  /usr/include/x86_64-linux-gnu/qt6/QtNetwork/QHostAddress \
   /usr/include/x86_64-linux-gnu/qt6/QtNetwork/QNetworkAccessManager \
   /usr/include/x86_64-linux-gnu/qt6/QtNetwork/QNetworkDiskCache \
   /usr/include/x86_64-linux-gnu/qt6/QtNetwork/QNetworkReply \
   /usr/include/x86_64-linux-gnu/qt6/QtNetwork/QNetworkRequest \
   /usr/include/x86_64-linux-gnu/qt6/QtNetwork/QSslConfiguration \
   /usr/include/x86_64-linux-gnu/qt6/QtNetwork/QSslPreSharedKeyAuthenticator \
-  /usr/include/x86_64-linux-gnu/qt6/QtNetwork/QUdpSocket \
   /usr/include/x86_64-linux-gnu/qt6/QtNetwork/qabstractnetworkcache.h \
   /usr/include/x86_64-linux-gnu/qt6/QtNetwork/qabstractsocket.h \
   /usr/include/x86_64-linux-gnu/qt6/QtNetwork/qhostaddress.h \
@@ -756,7 +754,6 @@ CMakeFiles/vpn_frontend.dir/frontend/app.cpp.o: /home/shivam/Desktop/CUSTOM\ VPN
   /usr/include/x86_64-linux-gnu/qt6/QtNetwork/qtnetwork-config.h \
   /usr/include/x86_64-linux-gnu/qt6/QtNetwork/qtnetworkexports.h \
   /usr/include/x86_64-linux-gnu/qt6/QtNetwork/qtnetworkglobal.h \
-  /usr/include/x86_64-linux-gnu/qt6/QtNetwork/qudpsocket.h \
   /usr/include/x86_64-linux-gnu/qt6/QtWidgets/QApplication \
   /usr/include/x86_64-linux-gnu/qt6/QtWidgets/QComboBox \
   /usr/include/x86_64-linux-gnu/qt6/QtWidgets/QGraphicsDropShadowEffect \
@@ -1041,8 +1038,6 @@ vpn_frontend_autogen/mocs_compilation.cpp:
 
 /usr/include/x86_64-linux-gnu/qt6/QtWidgets/QApplication:
 
-/usr/include/x86_64-linux-gnu/qt6/QtNetwork/qudpsocket.h:
-
 /usr/include/x86_64-linux-gnu/qt6/QtNetwork/qtnetworkglobal.h:
 
 /usr/include/x86_64-linux-gnu/qt6/QtNetwork/qtnetwork-config.h:
@@ -1068,8 +1063,6 @@ vpn_frontend_autogen/mocs_compilation.cpp:
 /usr/include/x86_64-linux-gnu/qt6/QtNetwork/QNetworkDiskCache:
 
 /usr/include/x86_64-linux-gnu/qt6/QtNetwork/QNetworkAccessManager:
-
-/usr/include/x86_64-linux-gnu/qt6/QtNetwork/QHostAddress:
 
 /usr/include/x86_64-linux-gnu/qt6/QtGui/qvalidator.h:
 
@@ -2112,8 +2105,6 @@ CMakeFiles/4.2.3/CMakeSystem.cmake:
 /usr/include/x86_64-linux-gnu/qt6/QtCore/qconstructormacros.h:
 
 /usr/lib/x86_64-linux-gnu/cmake/Qt6Network/Qt6NetworkVersionlessAliasTargets.cmake:
-
-/usr/include/x86_64-linux-gnu/qt6/QtNetwork/QUdpSocket:
 
 /usr/include/c++/15/bits/locale_classes.tcc:
 

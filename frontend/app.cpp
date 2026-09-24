@@ -380,6 +380,10 @@ int main(int argc, char *argv[])
         QPushButton#close:hover { background: #6b2b2b; padding: 12px 21px; }
         QPushButton#close:focus { border: 2px solid #e05252; }
         QPushButton#close:pressed { background: #2b1414; padding-top: 13px; padding-bottom: 9px; }
+        QPushButton#tor { background: #3d2244; color: #f5eeee; border: 1px solid #663377; }
+        QPushButton#tor:hover { background: #552f60; border-color: #8844aa; }
+        QPushButton#tor:pressed { background: #281430; }
+        QPushButton#tor:disabled { background: #1a121d; color: #665566; border-color: #332233; }
     )");
 
     auto* root = new QVBoxLayout(&window);
@@ -484,6 +488,34 @@ int main(int argc, char *argv[])
     controlsLayout->addWidget(closeButton);
     root->addWidget(controls);
 
+    auto* torGroup = new QGroupBox("TOR MODE");
+    auto* torLayout = new QVBoxLayout(torGroup);
+    torLayout->setSpacing(8);
+
+    auto* torHeaderLayout = new QHBoxLayout();
+    auto* torStatusLabel = new QLabel("Status: Disabled");
+    torStatusLabel->setObjectName("torStatus");
+    torStatusLabel->setStyleSheet("color: #aa9292; font-size: 13px; font-weight: 700;");
+
+    auto* torButton = new QPushButton("Enable Tor");
+    torButton->setObjectName("tor");
+    torButton->setToolTip("Toggle Tor Mode through the encrypted VPN tunnel");
+    torButton->setEnabled(false);
+
+    torHeaderLayout->addWidget(torStatusLabel, 1);
+    torHeaderLayout->addWidget(torButton);
+    torLayout->addLayout(torHeaderLayout);
+
+    auto* torNotice = new QLabel("Tor Mode routes supported traffic through the Tor network.");
+    torNotice->setStyleSheet("color: #8c8585; font-size: 11px;");
+    torLayout->addWidget(torNotice);
+
+    auto* torHint = new QLabel("Use Tor Browser to access Onion Services.");
+    torHint->setStyleSheet("color: #c7a4a4; font-size: 11px; font-style: italic;");
+    torLayout->addWidget(torHint);
+
+    root->addWidget(torGroup);
+
     // A single ICMP probe gives the user a real, lightweight connectivity
     // signal before choosing a server. It is not presented as server load;
     // load is shown only when the VPN server reports active sessions.
@@ -544,6 +576,7 @@ int main(int argc, char *argv[])
         widget->setGraphicsEffect(shadow);
     };
     addShadow(controls, QColor(0, 0, 0, 70), 22);
+    addShadow(torGroup, QColor(0, 0, 0, 70), 22);
     addShadow(runButton, QColor(98, 214, 181, 65), 18);
 
     auto* dashboardOpacity = new QGraphicsOpacityEffect(dashboard);
@@ -588,11 +621,52 @@ int main(int argc, char *argv[])
     }
     client->setProcessChannelMode(QProcess::MergedChannels);
     bool vpnConnected = false;
+    bool torModeEnabled = false;
     bool userLocationReady = false;
     double userLatitude = 0.0;
     double userLongitude = 0.0;
     QString userPlace;
     QString clientOutputBuffer;
+
+    auto updateTorUiState = [&](const QString& torState, const QString& torDetail) {
+        if (torState == QStringLiteral("TOR_CONNECTED"))
+        {
+            torModeEnabled = true;
+            torStatusLabel->setText("Status: Connected ✓");
+            torStatusLabel->setStyleSheet("color: #45c46b; font-size: 13px; font-weight: 700;");
+            torStatusLabel->setToolTip("");
+            torButton->setText("Disable Tor");
+            torButton->setEnabled(true);
+        }
+        else if (torState == QStringLiteral("TOR_CONNECTING") || torState == QStringLiteral("TOR_STARTING"))
+        {
+            torModeEnabled = true;
+            torStatusLabel->setText("Status: Connecting...");
+            torStatusLabel->setStyleSheet("color: #e4b33f; font-size: 13px; font-weight: 700;");
+            torStatusLabel->setToolTip("");
+            torButton->setText("Disable Tor");
+            torButton->setEnabled(true);
+        }
+        else if (torState == QStringLiteral("TOR_DISABLED"))
+        {
+            torModeEnabled = false;
+            torStatusLabel->setText("Status: Disabled");
+            torStatusLabel->setStyleSheet("color: #aa9292; font-size: 13px; font-weight: 700;");
+            torStatusLabel->setToolTip("");
+            torButton->setText("Enable Tor");
+            torButton->setEnabled(vpnConnected);
+        }
+        else if (torState == QStringLiteral("TOR_ERROR"))
+        {
+            torModeEnabled = false;
+            torStatusLabel->setText("Status: Error ✗");
+            torStatusLabel->setStyleSheet("color: #d23838; font-size: 13px; font-weight: 700;");
+            if (!torDetail.isEmpty())
+                torStatusLabel->setToolTip(torDetail);
+            torButton->setText("Enable Tor");
+            torButton->setEnabled(vpnConnected);
+        }
+    };
 
     auto* geoLookup = new QNetworkAccessManager(&window);
     requestIpLocation(
@@ -631,9 +705,18 @@ int main(int argc, char *argv[])
             }
         }
 
+        const QRegularExpression torPattern(
+            QStringLiteral("TOR_STATUS\\s+([A-Z_]+)(?:\\s+([^\\r\\n]*))?"));
+        const QRegularExpressionMatch torMatch = torPattern.match(clientOutputBuffer);
+        if (torMatch.hasMatch())
+        {
+            updateTorUiState(torMatch.captured(1), torMatch.captured(2));
+        }
+
         if (!vpnConnected && clientOutputBuffer.contains(QStringLiteral("VPN_CONNECTED")))
         {
             vpnConnected = true;
+            torButton->setEnabled(true);
             status->setText("VPN status\nConnected");
             locationMap->setLoading(QStringLiteral("Locating VPN server..."));
 
@@ -670,6 +753,12 @@ int main(int argc, char *argv[])
     });
     QObject::connect(client, &QProcess::finished, &window, [&](int, QProcess::ExitStatus) {
         vpnConnected = false;
+        torModeEnabled = false;
+        torStatusLabel->setText("Status: Disabled");
+        torStatusLabel->setStyleSheet("color: #aa9292; font-size: 13px; font-weight: 700;");
+        torStatusLabel->setToolTip("");
+        torButton->setText("Enable Tor");
+        torButton->setEnabled(false);
         status->setText("VPN status\nDisconnected");
         server->setEnabled(true);
         if (userLocationReady)
@@ -683,6 +772,25 @@ int main(int argc, char *argv[])
             status->setText("VPN status\nDisconnecting...");
             client->write("disconnect\n");
             client->closeWriteChannel();
+        }
+    });
+    QObject::connect(torButton, &QPushButton::clicked, &window, [&]() {
+        if (!vpnConnected || client->state() == QProcess::NotRunning)
+            return;
+
+        if (!torModeEnabled)
+        {
+            torStatusLabel->setText("Status: Connecting...");
+            torStatusLabel->setStyleSheet("color: #e4b33f; font-size: 13px; font-weight: 700;");
+            torButton->setEnabled(false);
+            client->write("tor on\n");
+        }
+        else
+        {
+            torStatusLabel->setText("Status: Disabling...");
+            torStatusLabel->setStyleSheet("color: #aa9292; font-size: 13px; font-weight: 700;");
+            torButton->setEnabled(false);
+            client->write("tor off\n");
         }
     });
 

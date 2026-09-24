@@ -4,7 +4,7 @@
 # compile CXX with /usr/bin/c++
 CXX_DEFINES = 
 
-CXX_INCLUDES = -I"/home/shivam/Desktop/CUSTOM VPN" -I"/home/shivam/Desktop/CUSTOM VPN/crypto" -I"/home/shivam/Desktop/CUSTOM VPN/tun"
+CXX_INCLUDES = -I"/home/shivam/Desktop/CUSTOM VPN" -I"/home/shivam/Desktop/CUSTOM VPN/crypto" -I"/home/shivam/Desktop/CUSTOM VPN/tun" -I"/home/shivam/Desktop/CUSTOM VPN/tor"
 
 CXX_FLAGS = -std=c++17
 

@@ -217,10 +217,16 @@ void serverToTun(
             continue;
         }
 
-        if (string(plaintext.begin(), plaintext.end()) == "VPN_DISCONNECT")
+        string message(plaintext.begin(), plaintext.end());
+        if (message == "VPN_DISCONNECT")
         {
             stopRequested.store(true);
             break;
+        }
+        else if (message.rfind("TOR_STATUS", 0) == 0)
+        {
+            cout << message << endl;
+            continue;
         }
 
         const ssize_t bytesWritten = write(tun_fd, plaintext.data(), plaintext.size());
