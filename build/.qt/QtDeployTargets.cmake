@@ -1,0 +1,6 @@
+set(__QT_DEPLOY_TARGET_vpn_client_FILE /home/shivam/Desktop/CUSTOM VPN/build/vpn_client)
+set(__QT_DEPLOY_TARGET_vpn_client_TYPE EXECUTABLE)
+set(__QT_DEPLOY_TARGET_vpn_server_FILE /home/shivam/Desktop/CUSTOM VPN/build/vpn_server1)
+set(__QT_DEPLOY_TARGET_vpn_server_TYPE EXECUTABLE)
+set(__QT_DEPLOY_TARGET_vpn_frontend_FILE /home/shivam/Desktop/CUSTOM VPN/build/vpn_frontend)
+set(__QT_DEPLOY_TARGET_vpn_frontend_TYPE EXECUTABLE)

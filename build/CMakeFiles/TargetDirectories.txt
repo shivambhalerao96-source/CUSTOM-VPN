@@ -1,0 +1,8 @@
+/home/shivam/Desktop/CUSTOM VPN/build/CMakeFiles/vpn_core_objects.dir
+/home/shivam/Desktop/CUSTOM VPN/build/CMakeFiles/vpn_client.dir
+/home/shivam/Desktop/CUSTOM VPN/build/CMakeFiles/vpn_server.dir
+/home/shivam/Desktop/CUSTOM VPN/build/CMakeFiles/vpn_frontend.dir
+/home/shivam/Desktop/CUSTOM VPN/build/CMakeFiles/edit_cache.dir
+/home/shivam/Desktop/CUSTOM VPN/build/CMakeFiles/rebuild_cache.dir
+/home/shivam/Desktop/CUSTOM VPN/build/CMakeFiles/vpn_frontend_autogen_timestamp_deps.dir
+/home/shivam/Desktop/CUSTOM VPN/build/CMakeFiles/vpn_frontend_autogen.dir
