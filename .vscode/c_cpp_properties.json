@@ -5,6 +5,7 @@
             "includePath": [
                 "${workspaceFolder}/**"
             ],
+            "compileCommands": "${workspaceFolder}/build/compile_commands.json",
             "defines": [],
             "compilerPath": "/usr/bin/gcc",
             "cStandard": "c17",
@@ -16,6 +17,7 @@
             "includePath": [
                 "${workspaceFolder}/**"
             ],
+            "compileCommands": "${workspaceFolder}/build/compile_commands.json",
             "defines": [],
             "compilerPath": "/usr/bin/gcc",
             "cStandard": "c17",

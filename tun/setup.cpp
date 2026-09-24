@@ -38,9 +38,10 @@ string get_router_ip() {
         result += buffer;
     }
 
-    
+    // cout<<"outside llop"<<endl;
+    // cout<<"result="<<result<<endl;
 
-    int status = pclose(pipe);
+     pclose(pipe);
 
     // Remove trailing newline
     while (!result.empty() &&
@@ -51,9 +52,38 @@ string get_router_ip() {
     return result;
 }
 
-void reroute(){
+static string detect_external_iface() {
+
+    string command =
+        "ip route show default | awk '{for(i=1;i<=NF;i++) if ($i==\"dev\") {print $(i+1); exit}}'";
+
+    FILE* pipe = popen(command.c_str(), "r");
+    if (pipe == nullptr) {
+        return "";
+    }
+
+    char buffer[128];
+    string iface;
+
+    while (fgets(buffer, sizeof(buffer), pipe) != nullptr) {
+        iface += buffer;
+    }
+
+    pclose(pipe);
+
+    while (!iface.empty() &&
+           (iface.back() == '\n' || iface.back() == '\r' ||
+            iface.back() == ' ' || iface.back() == '\t')) {
+        iface.pop_back();
+    }
+
+    return iface;
+}
+
+void reroute(const char* vpn_server_ip) {
 
     string router= get_router_ip();// gets the router ip address
+    string iface = detect_external_iface();
 
    
 
@@ -64,15 +94,27 @@ void reroute(){
 
     // formulates the command to be executed
 
-    // make ip packets with destination vpn server go through the wifi 
-    string cmd= string("sudo ip route add 136.70.156.216 via ")+ router+ " dev wlo1";
+    if (iface.empty()) {
+        cerr << "Failed to detect default network interface." << endl;
+        return;
+    }
+
+    // make ip packets with destination vpn server go through the physical interface
+    string cmd = string("sudo ip route add ")+vpn_server_ip+ string (" via ") + router +
+                 " dev " + iface;
     system(cmd.c_str());
     // make ip packets with destination other than vpn server go through tun0
     int status = system("sudo ip route add default dev tun0 metric 50");
     if( status <0){
-        cout<<"tun0 not default"<<endl;
         return ;
     }
+
+    // IPv6: route all IPv6 traffic through the tunnel too, so IPv6 can't
+    // bypass the VPN via the physical interface. Note the encrypted UDP
+    // tunnel to the server is still plain IPv4 (see client1.cpp's socket),
+    // so unlike the IPv4 case above there is no "server IP" exception route
+    // needed here.
+    system("sudo ip -6 route add default dev tun0 metric 50");
 }
 
 
@@ -84,12 +126,20 @@ void close_tun(){
 int up(){
     // makes tun0 active
     return system("sudo ip link set dev tun0 up");
-    cout<<"setted to up"<<endl;
-
 }
 
-int assign_ipaddress(){
-     return system("sudo ip addr add 10.0.0.1/24 dev tun0");
+int assign_ipaddress(const string & vpn_ip ){
+    string cmd= "sudo ip addr add " + vpn_ip + " dev tun0";
+     return system(cmd.c_str());
+}
+
+int assign_ipv6_address(const string & vpn_ipv6){
+    // vpn_ipv6 is the bare address (e.g. "fd00:dead:beef::7"); the server's
+    // allocation always hands out addresses from its /64 VPN range, so the
+    // prefix length is fixed here the same way the IPv4 /24 is implied by
+    // the "10.0.0.x" convention above.
+    string cmd = "sudo ip -6 addr add " + vpn_ipv6 + "/64 dev tun0";
+    return system(cmd.c_str());
 }
 
 
@@ -98,7 +148,10 @@ int assign_ipaddress(){
 //     return 0;
 // }
 
-int create_tun_interface() {
+int create_tun_interface(
+    const string& vpn_ipv4,
+    const string& vpn_ipv6,
+    const string& vpn_server_ip) {
 
     
 
@@ -120,14 +173,21 @@ if(f < 0) {
    
     return  -1;
 }
-if (assign_ipaddress() != 0) {
+if (assign_ipaddress(vpn_ipv4) != 0) {
     perror("Failed to set ip address");
     return -1 ;
 }
 
-up();
-reroute();
-return fd;
+// Assign the IPv6 address the server handed out alongside the IPv4 one, so
+// the same TUN device carries both families. If the server (for whatever
+// reason) didn't send one, skip this rather than failing the whole tunnel
+// so IPv4-only behavior stays intact.
+if (!vpn_ipv6.empty() && assign_ipv6_address(vpn_ipv6) != 0) {
+    perror("Failed to set IPv6 address");
+    return -1;
 }
 
-
+up();
+reroute(vpn_server_ip.c_str());
+return fd;
+}

@@ -1,56 +1,232 @@
 #include "transport.h"
+#include "../crypto/packet_crypto.h"
+
+#include <arpa/inet.h>
+#include <sys/socket.h>
+#include <unistd.h>
 
 #include <iostream>
-#include <unistd.h>
-#include <sys/socket.h>
-#include <arpa/inet.h>
+#include <sstream>
+#include <vector>
 
 using namespace std;
-void tunToServer(int tun_fd, int sockfd, sockaddr_in serverAddress)
-{
-    char buffer[65535];
 
-    while (true)
+void tunToServer(
+    int tun_fd,
+    int sockfd,
+    sockaddr_in serverAddress,
+    const SessionKeys& sessionKeys,
+    std::atomic<bool>& stopRequested,
+    SequenceNumberSender& sendSequence,
+    std::mutex& sequenceMutex)
+{
+    unsigned char buffer[65535];
+
+    while (!stopRequested.load())
     {
-        int bytesRead = read(tun_fd, buffer, sizeof(buffer));
+        const int bytesRead = read(tun_fd, buffer, sizeof(buffer));
+        if (stopRequested.load())
+            break;
 
         if (bytesRead < 0)
-        { perror("Error reading packet");
+        {
+            if (stopRequested.load())
+                break;
+            perror("Error reading packet");
             continue;
         }
 
-        cout << "[TUN -> SERVER] Read "<< bytesRead<< " bytes" << endl;
+        uint64_t sequence = 0;
+        {
+            lock_guard<mutex> lock(sequenceMutex);
+            if (!sendSequence.nextSequence(sequence))
+            {
+                cerr << "Client-to-server sequence space exhausted; dropping packet" << endl;
+                continue;
+            }
+        }
 
-        int bytesSent = sendto(sockfd,buffer,bytesRead,0,(sockaddr *)&serverAddress, sizeof(serverAddress));
+        vector<unsigned char> encryptedPacket;
+        if (!encryptSequencedVpnPacket(
+                sequence,
+                buffer,
+                static_cast<size_t>(bytesRead),
+                sessionKeys.clientToServer,
+                encryptedPacket))
+        {
+            cerr << "Failed to encrypt TUN packet; dropping packet" << endl;
+            continue;
+        }
+
+        const ssize_t bytesSent = sendto(
+            sockfd,
+            encryptedPacket.data(),
+            encryptedPacket.size(),
+            0,
+            reinterpret_cast<sockaddr*>(&serverAddress),
+            sizeof(serverAddress));
 
         if (bytesSent < 0)
-        {perror("Failed to send packet");}
-        else
-        {cout << "[TUN -> SERVER] Sent "<< bytesSent << " bytes" << endl;}
+            perror("Failed to send packet");
+        else if (static_cast<size_t>(bytesSent) != encryptedPacket.size())
+            cerr << "Failed to send complete encrypted packet" << endl;
     }
 }
 
-
-void serverToTun(int tun_fd, int sockfd)
+VpnAssignedAddresses receiveHandshake(
+    int sockfd,
+    const X25519KeyPair& clientKeyPair,
+    X25519SharedSecret& sharedSecret,
+    SessionKeys& sessionKeys)
 {
     char buffer[65535];
-
-    while (true)
+    const int bytesReceived = recvfrom(sockfd, buffer, sizeof(buffer), 0, nullptr, nullptr);
+    if (bytesReceived < 0)
     {
-        int bytesReceived = recvfrom(sockfd,buffer, sizeof(buffer), 0,nullptr,nullptr);
+        perror("Failed to receive handshake");
+        return {};
+    }
+
+    const string message(buffer, bytesReceived);
+    if (message == "VPN_FULL")
+        return {};
+
+    const string prefix = "VPN_IP ";
+    if (message.rfind(prefix, 0) != 0)
+        return {};
+
+    istringstream fieldStream(message.substr(prefix.size()));
+    string vpnIPv4;
+    string vpnIPv6;
+    string serverPublicKeyText;
+
+    if (!(fieldStream >> vpnIPv4 >> vpnIPv6 >> serverPublicKeyText))
+    {
+        cerr << "Invalid server key-exchange response" << endl;
+        return {};
+    }
+
+    int activeClients = -1;
+    int clientCapacity = -1;
+    string loadTag;
+    if (fieldStream >> loadTag >> activeClients >> clientCapacity &&
+        (loadTag != "VPN_LOAD" || activeClients < 0 || clientCapacity <= 0 ||
+         activeClients > clientCapacity))
+    {
+        activeClients = -1;
+        clientCapacity = -1;
+    }
+
+    X25519PublicKey serverPublicKey{};
+    if (!decodeX25519PublicKey(serverPublicKeyText, serverPublicKey))
+    {
+        cerr << "Invalid server X25519 public key" << endl;
+        return {};
+    }
+
+    if (!deriveX25519SharedSecret(
+            sharedSecret,
+            clientKeyPair.privateKey,
+            serverPublicKey))
+    {
+        cerr << "Failed to derive the X25519 shared secret" << endl;
+        return {};
+    }
+
+    if (!deriveSessionKeys(sessionKeys, sharedSecret))
+    {
+        cerr << "Failed to derive session keys" << endl;
+        wipeX25519SharedSecret(sharedSecret);
+        return {};
+    }
+
+    return VpnAssignedAddresses{vpnIPv4, vpnIPv6, activeClients, clientCapacity};
+}
+
+int sendHandshake(
+    int sockfd,
+    sockaddr_in serverAddress,
+    X25519KeyPair& clientKeyPair)
+{
+    if (!generateX25519KeyPair(clientKeyPair))
+    {
+        cerr << "Failed to generate the client X25519 key pair" << endl;
+        return -1;
+    }
+
+    const string response =
+        "VPN_HELLO " + encodeX25519PublicKey(clientKeyPair.publicKey);
+
+    const int bytesSent = sendto(
+        sockfd,
+        response.c_str(),
+        response.size(),
+        0,
+        reinterpret_cast<const sockaddr*>(&serverAddress),
+        sizeof(serverAddress));
+
+    if (bytesSent < 0)
+    {
+        perror("Failed to send handshake acknowledgment");
+        wipeX25519PrivateKey(clientKeyPair);
+        return -1;
+    }
+
+    return 0;
+}
+
+void serverToTun(
+    int tun_fd,
+    int sockfd,
+    const SessionKeys& sessionKeys,
+    std::atomic<bool>& stopRequested,
+    ReplayWindow& receiveWindow)
+{
+    unsigned char buffer[kMaxVpnTunPacketBytes];
+
+    while (!stopRequested.load())
+    {
+        const int bytesReceived = recvfrom(sockfd, buffer, sizeof(buffer), 0, nullptr, nullptr);
+        if (stopRequested.load())
+            break;
+
         if (bytesReceived < 0)
         {
+            if (stopRequested.load())
+                break;
             perror("Failed to receive packet");
             continue;
         }
 
-        cout << "[SERVER -> TUN] Received "<< bytesReceived<< " bytes" << endl;
+        vector<unsigned char> plaintext;
+        uint64_t sequence = 0;
+        if (!decryptSequencedVpnPacket(
+                buffer,
+                static_cast<size_t>(bytesReceived),
+                sessionKeys.serverToClient,
+                sequence,
+                plaintext))
+        {
+            cerr << "Server-to-client packet authentication failed; dropping packet" << endl;
+            continue;
+        }
 
-        int bytesWritten = write(tun_fd,buffer,bytesReceived);
+        if (!receiveWindow.accept(sequence))
+        {
+            cerr << "Server-to-client replay detected; dropping packet" << endl;
+            continue;
+        }
 
+        if (string(plaintext.begin(), plaintext.end()) == "VPN_DISCONNECT")
+        {
+            stopRequested.store(true);
+            break;
+        }
+
+        const ssize_t bytesWritten = write(tun_fd, plaintext.data(), plaintext.size());
         if (bytesWritten < 0)
-        {perror("Failed to write packet to TUN");}
-        else
-        {cout << "[SERVER -> TUN] Wrote "<< bytesWritten<< " bytes to TUN" << endl;}
-    }
+            perror("Failed to write packet to TUN");
+        else if (static_cast<size_t>(bytesWritten) != plaintext.size())
+            cerr << "Failed to write complete packet to TUN" << endl;
+}
 }

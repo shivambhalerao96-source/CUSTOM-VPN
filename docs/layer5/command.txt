@@ -1,0 +1,13 @@
+Client:
+g++ -std=c++17 -Wall -Wextra -Wpedantic \
+  client/client1.cpp client/transport.cpp \
+  crypto/handshake.cpp crypto/session_keys.cpp \
+  crypto/packet_crypto.cpp crypto/replay_protection.cpp \
+  tun/setup.cpp -lsodium -pthread -o client_app
+
+  Server:
+  g++ -std=c++17 -Wall -Wextra -Wpedantic \
+  server/server.cpp server/forward.cpp \
+  crypto/handshake.cpp crypto/session_keys.cpp \
+  crypto/packet_crypto.cpp crypto/replay_protection.cpp \
+  -lsodium -pthread -o server_app
