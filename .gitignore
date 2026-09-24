@@ -7,4 +7,4 @@ images
 tests
 replay.py
 server_app
-build/
+/build
