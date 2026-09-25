@@ -12,6 +12,10 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QLabel>
+#include <QNetworkAccessManager>
+#include <QNetworkDiskCache>
+#include <QNetworkReply>
+#include <QNetworkRequest>
 #include <QPainter>
 #include <QPropertyAnimation>
 #include <QProcess>
@@ -273,6 +277,7 @@ public:
         m_place = place.isEmpty() ? QStringLiteral("Unknown location") : place;
         m_hasLocation = true;
         m_message.clear();
+        requestTiles();
         update();
     }
 
@@ -467,60 +472,16 @@ int main(int argc, char *argv[])
                         state.ip);
 
     auto refreshServerItems = [&]() {
-        int recommendedIndex = -1;
         for (int index = 0; index < static_cast<int>(serverStates.size()); ++index)
         {
-            if (serverStates[index].latencyMs < 0)
-                continue;
-            if (recommendedIndex < 0 ||
-                serverStates[index].latencyMs < serverStates[recommendedIndex].latencyMs)
-                recommendedIndex = index;
-        }
-
-        for (int index = 0; index < static_cast<int>(serverStates.size()); ++index)
-        {
-            ServerState& state = serverStates[index];
-            state.recommended = index == recommendedIndex;
-
+            const ServerState& state = serverStates[index];
             QColor dotColor(QStringLiteral("#8c8585"));
-            QString connectivity = QStringLiteral("Checking connectivity...");
             if (state.probeFinished && state.latencyMs < 0)
-            {
                 dotColor = QColor(QStringLiteral("#d23838"));
-                connectivity = QStringLiteral("Unavailable");
-            }
-            else if (state.latencyMs >= 0 && state.latencyMs < 80)
-            {
-                dotColor = QColor(QStringLiteral("#45c46b"));
-                connectivity = QStringLiteral("Excellent · %1 ms").arg(state.latencyMs);
-            }
-            else if (state.latencyMs >= 0 && state.latencyMs < 180)
-            {
-                dotColor = QColor(QStringLiteral("#e4b33f"));
-                connectivity = QStringLiteral("Fair · %1 ms").arg(state.latencyMs);
-            }
             else if (state.latencyMs >= 0)
-            {
-                dotColor = QColor(QStringLiteral("#d23838"));
-                connectivity = QStringLiteral("Slow · %1 ms").arg(state.latencyMs);
-            }
+                dotColor = QColor(QStringLiteral("#45c46b"));
 
-            // QString load = QStringLiteral("Load: unavailable");
-            // if (state.activeClients >= 0 && state.clientCapacity > 0)
-            // {
-            //     const int loadPercent = qBound(
-            //         0, state.activeClients * 100 / state.clientCapacity, 100);
-            //     load = QStringLiteral("Load: %1/%2 active (%3%)")
-            //                .arg(state.activeClients)
-            //                .arg(state.clientCapacity)
-            //                .arg(loadPercent);
-            // }
-
-            QString label = state.name + QStringLiteral("  •  ") + state.ip;
-            // if (state.recommended)
-            //     label += QStringLiteral("  |  Recommended");
-            // label += QStringLiteral("  |  ") + connectivity ;
-            //          //QStringLiteral("  |  ") + load;
+            const QString label = state.name + QStringLiteral("  •  ") + state.ip;
             server->setItemIcon(index, statusDotIcon(dotColor));
             server->setItemText(index, label);
         }
