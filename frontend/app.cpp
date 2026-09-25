@@ -12,10 +12,6 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QLabel>
-#include <QNetworkAccessManager>
-#include <QNetworkDiskCache>
-#include <QNetworkReply>
-#include <QNetworkRequest>
 #include <QPainter>
 #include <QPropertyAnimation>
 #include <QProcess>
@@ -238,18 +234,10 @@ class LocationMapWidget final : public QWidget
 {
 public:
     explicit LocationMapWidget(QWidget* parent = nullptr)
-        : QWidget(parent), m_tileNetwork(this)
+        : QWidget(parent)
     {
         setMinimumSize(300, 210);
         setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-
-        auto* cache = new QNetworkDiskCache(this);
-        const QString cachePath = QStandardPaths::writableLocation(
-            QStandardPaths::CacheLocation) + QStringLiteral("/custom-vpn-map");
-        QDir().mkpath(cachePath);
-        cache->setCacheDirectory(cachePath);
-        cache->setMaximumCacheSize(64 * 1024 * 1024);
-        m_tileNetwork.setCache(cache);
     }
 
     void setLoading(const QString& message = QStringLiteral("Finding your location..."))
@@ -285,7 +273,6 @@ public:
         m_place = place.isEmpty() ? QStringLiteral("Unknown location") : place;
         m_hasLocation = true;
         m_message.clear();
-        requestTiles();
         update();
     }
 
@@ -518,22 +505,22 @@ int main(int argc, char *argv[])
                 connectivity = QStringLiteral("Slow · %1 ms").arg(state.latencyMs);
             }
 
-            QString load = QStringLiteral("Load: unavailable");
-            if (state.activeClients >= 0 && state.clientCapacity > 0)
-            {
-                const int loadPercent = qBound(
-                    0, state.activeClients * 100 / state.clientCapacity, 100);
-                load = QStringLiteral("Load: %1/%2 active (%3%)")
-                           .arg(state.activeClients)
-                           .arg(state.clientCapacity)
-                           .arg(loadPercent);
-            }
+            // QString load = QStringLiteral("Load: unavailable");
+            // if (state.activeClients >= 0 && state.clientCapacity > 0)
+            // {
+            //     const int loadPercent = qBound(
+            //         0, state.activeClients * 100 / state.clientCapacity, 100);
+            //     load = QStringLiteral("Load: %1/%2 active (%3%)")
+            //                .arg(state.activeClients)
+            //                .arg(state.clientCapacity)
+            //                .arg(loadPercent);
+            // }
 
             QString label = state.name + QStringLiteral("  •  ") + state.ip;
-            if (state.recommended)
-                label += QStringLiteral("  |  Recommended");
-            label += QStringLiteral("  |  ") + connectivity +
-                     QStringLiteral("  |  ") + load;
+            // if (state.recommended)
+            //     label += QStringLiteral("  |  Recommended");
+            // label += QStringLiteral("  |  ") + connectivity ;
+            //          //QStringLiteral("  |  ") + load;
             server->setItemIcon(index, statusDotIcon(dotColor));
             server->setItemText(index, label);
         }
@@ -624,7 +611,7 @@ int main(int argc, char *argv[])
         return label;
     };
     auto* speed = addMetric("Internet speed", 0, 0);
-    auto* ipv4 = addMetric("IPv4 address", 0, 1);
+    auto* ipv4 = addMetric("Public IPv4", 0, 1);
     auto* locationMap = new LocationMapWidget;
     locationMap->setObjectName("locationMap");
     metrics->addWidget(locationMap, 1, 0);
@@ -671,7 +658,6 @@ int main(int argc, char *argv[])
         speedClock.restart();
         speed->setText(QStringLiteral("Internet speed\n%1 KiB/s")
                            .arg(speedKiB, 0, 'f', 1));
-        ipv4->setText(QStringLiteral("IPv4 address\n%1").arg(localIpv4Address()));
     });
 
     auto* client = new QProcess(&window);
@@ -857,11 +843,9 @@ int main(int argc, char *argv[])
         torButton->setText("Enable Tor");
         torButton->setEnabled(false);
         status->setText("VPN status\nDisconnected");
+        ipv4->setText(QStringLiteral("IPv4 address\n%1").arg(localIpv4Address()));
         server->setEnabled(true);
-        if (userLocationReady)
-            locationMap->setLocation(userLatitude, userLongitude, userPlace);
-        else
-            locationMap->setLoading();
+        locationMap->setUnavailable(QStringLiteral("Location unavailable without network lookup"));
     });
     QObject::connect(closeButton, &QPushButton::clicked, &window, [&]() {
         torPollTimer->stop();
