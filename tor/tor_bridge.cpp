@@ -163,6 +163,8 @@ void TorBridge::acceptLoop(int listenFd, const std::string& targetHost, int targ
         if (inet_pton(AF_INET, targetHost.c_str(), &targetAddr.sin_addr) <= 0 ||
             connect(targetFd, reinterpret_cast<sockaddr*>(&targetAddr), sizeof(targetAddr)) < 0)
         {
+            std::cerr << "[ TOR BRIDGE ] Connection failed to " << targetHost << ":" << targetPort
+                      << " - " << strerror(errno) << std::endl;
             close(clientFd);
             close(targetFd);
             continue;

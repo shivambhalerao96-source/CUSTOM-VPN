@@ -628,9 +628,19 @@ int main(int argc, char *argv[])
     QString userPlace;
     QString clientOutputBuffer;
 
+    auto* torPollTimer = new QTimer(&window);
+    torPollTimer->setInterval(1500);
+    QObject::connect(torPollTimer, &QTimer::timeout, &window, [&]() {
+        if (vpnConnected && client->state() != QProcess::NotRunning)
+        {
+            client->write("tor status\n");
+        }
+    });
+
     auto updateTorUiState = [&](const QString& torState, const QString& torDetail) {
         if (torState == QStringLiteral("TOR_CONNECTED"))
         {
+            torPollTimer->stop();
             torModeEnabled = true;
             torStatusLabel->setText("Status: Connected ✓");
             torStatusLabel->setStyleSheet("color: #45c46b; font-size: 13px; font-weight: 700;");
@@ -646,9 +656,12 @@ int main(int argc, char *argv[])
             torStatusLabel->setToolTip("");
             torButton->setText("Disable Tor");
             torButton->setEnabled(true);
+            if (!torPollTimer->isActive())
+                torPollTimer->start();
         }
         else if (torState == QStringLiteral("TOR_DISABLED"))
         {
+            torPollTimer->stop();
             torModeEnabled = false;
             torStatusLabel->setText("Status: Disabled");
             torStatusLabel->setStyleSheet("color: #aa9292; font-size: 13px; font-weight: 700;");
@@ -658,6 +671,7 @@ int main(int argc, char *argv[])
         }
         else if (torState == QStringLiteral("TOR_ERROR"))
         {
+            torPollTimer->stop();
             torModeEnabled = false;
             torStatusLabel->setText("Status: Error ✗");
             torStatusLabel->setStyleSheet("color: #d23838; font-size: 13px; font-weight: 700;");
