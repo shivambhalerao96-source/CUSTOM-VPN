@@ -3,6 +3,8 @@
 #include <QCoreApplication>
 #include <QDir>
 #include <QElapsedTimer>
+#include <QFile>
+#include <QFileInfo>
 #include <QGridLayout>
 #include <QGraphicsDropShadowEffect>
 #include <QGraphicsOpacityEffect>
@@ -242,6 +244,10 @@ public:
     {
         setMinimumSize(300, 210);
         setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+
+        auto* diskCache = new QNetworkDiskCache(this);
+        diskCache->setCacheDirectory(cacheDirPath());
+        m_tileNetwork.setCache(diskCache);
     }
 
     void setLoading(const QString& message = QStringLiteral("Finding your location..."))
@@ -344,12 +350,68 @@ private:
         return QString::number(x) + QLatin1Char(':') + QString::number(y);
     }
 
+    static QString cacheDirPath()
+    {
+        QString baseDir = QStandardPaths::writableLocation(QStandardPaths::CacheLocation);
+        const char* sudoUser = getenv("SUDO_USER");
+        if (sudoUser && strlen(sudoUser) > 0)
+        {
+            const QString sudoCache = QStringLiteral("/home/%1/.cache").arg(QString::fromLocal8Bit(sudoUser));
+            if (QDir(sudoCache).exists())
+                return sudoCache + QStringLiteral("/custom-vpn-map");
+        }
+        return baseDir + QStringLiteral("/custom-vpn-map");
+    }
+
+    static QImage loadCachedTile(int zoom, int x, int y)
+    {
+        const QString fileName = QStringLiteral("tile_%1_%2_%3.png").arg(zoom).arg(x).arg(y);
+
+        // 1. Check embedded Qt resource
+        const QString qrcPath = QStringLiteral(":/map/%1").arg(fileName);
+        if (QFile::exists(qrcPath))
+        {
+            QImage img(qrcPath);
+            if (!img.isNull())
+                return img;
+        }
+
+        // 2. Check candidate local directories
+        QStringList candidateDirs;
+        candidateDirs << cacheDirPath();
+        const char* sudoUser = getenv("SUDO_USER");
+        if (sudoUser && strlen(sudoUser) > 0)
+        {
+            candidateDirs << QStringLiteral("/home/%1/.cache/custom-vpn-map").arg(QString::fromLocal8Bit(sudoUser));
+        }
+        candidateDirs << QDir::homePath() + QStringLiteral("/.cache/custom-vpn-map");
+        candidateDirs << QDir::currentPath() + QStringLiteral("/frontend/tiles");
+        candidateDirs << QCoreApplication::applicationDirPath() + QStringLiteral("/../frontend/tiles");
+        candidateDirs << QCoreApplication::applicationDirPath() + QStringLiteral("/tiles");
+
+        for (const QString& dir : candidateDirs)
+        {
+            const QString filePath = dir + QLatin1Char('/') + fileName;
+            if (QFileInfo::exists(filePath))
+            {
+                QImage img(filePath);
+                if (!img.isNull())
+                    return img;
+            }
+        }
+
+        return QImage();
+    }
+
     void requestTiles()
     {
         const int tileCount = 1 << m_zoom;
         m_firstTileX = static_cast<int>(std::floor(m_centerWorldX / kTileSize)) - 1;
         m_firstTileY = static_cast<int>(std::floor(m_centerWorldY / kTileSize)) - 1;
         m_tiles.clear();
+
+        const QString targetCacheDir = cacheDirPath();
+        QDir().mkpath(targetCacheDir);
 
         for (int tileX = m_firstTileX; tileX <= m_firstTileX + 2; ++tileX)
         {
@@ -359,6 +421,15 @@ private:
                     continue;
 
                 const int wrappedX = ((tileX % tileCount) + tileCount) % tileCount;
+                const QString key = tileKey(tileX, tileY);
+
+                const QImage cached = loadCachedTile(m_zoom, wrappedX, tileY);
+                if (!cached.isNull())
+                {
+                    m_tiles.insert(key, cached);
+                    continue;
+                }
+
                 const QUrl url(QStringLiteral("https://tile.openstreetmap.org/%1/%2/%3.png")
                                    .arg(m_zoom)
                                    .arg(wrappedX)
@@ -366,16 +437,25 @@ private:
                 QNetworkRequest request(url);
                 request.setHeader(QNetworkRequest::UserAgentHeader,
                                   QStringLiteral("CustomVPN-DesktopApp/1.0 (Linux; x86_64)"));
+                request.setAttribute(QNetworkRequest::CacheLoadControlAttribute,
+                                     QNetworkRequest::PreferCache);
                 request.setTransferTimeout(5000);
                 QNetworkReply* reply = m_tileNetwork.get(request);
-                const QString key = tileKey(tileX, tileY);
                 QObject::connect(reply, &QNetworkReply::finished, this,
-                                 [this, reply, key]() {
+                                 [this, reply, key, targetCacheDir, wrappedX, tileY]() {
                     if (reply->error() == QNetworkReply::NoError)
                     {
                         const QImage image = QImage::fromData(reply->readAll());
                         if (!image.isNull())
+                        {
                             m_tiles.insert(key, image);
+                            const QString savePath = QStringLiteral("%1/tile_%2_%3_%4.png")
+                                                         .arg(targetCacheDir)
+                                                         .arg(m_zoom)
+                                                         .arg(wrappedX)
+                                                         .arg(tileY);
+                            image.save(savePath, "PNG");
+                        }
                     }
                     reply->deleteLater();
                     update();

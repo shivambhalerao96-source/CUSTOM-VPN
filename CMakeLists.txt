@@ -77,7 +77,10 @@ if(BUILD_FRONTEND)
     find_package(QT NAMES Qt6 Qt5 COMPONENTS Widgets Network REQUIRED)
     find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Widgets Network REQUIRED)
 
-    add_executable(vpn_frontend frontend/app.cpp)
+    add_executable(vpn_frontend
+        frontend/app.cpp
+        frontend/resources.qrc
+    )
     target_link_libraries(vpn_frontend PRIVATE
         Qt${QT_VERSION_MAJOR}::Widgets
         Qt${QT_VERSION_MAJOR}::Network
