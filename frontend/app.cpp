@@ -774,10 +774,15 @@ int main(int argc, char *argv[])
 
         const QRegularExpression torPattern(
             QStringLiteral("TOR_STATUS\\s+([A-Z_]+)(?:\\s+([^\\r\\n]*))?"));
-        const QRegularExpressionMatch torMatch = torPattern.match(clientOutputBuffer);
-        if (torMatch.hasMatch())
+        QRegularExpressionMatchIterator it = torPattern.globalMatch(clientOutputBuffer);
+        QRegularExpressionMatch lastTorMatch;
+        while (it.hasNext())
         {
-            updateTorUiState(torMatch.captured(1), torMatch.captured(2));
+            lastTorMatch = it.next();
+        }
+        if (lastTorMatch.hasMatch())
+        {
+            updateTorUiState(lastTorMatch.captured(1), lastTorMatch.captured(2));
         }
 
         if (!vpnConnected && clientOutputBuffer.contains(QStringLiteral("VPN_CONNECTED")))
@@ -785,22 +790,30 @@ int main(int argc, char *argv[])
             vpnConnected = true;
             torButton->setEnabled(true);
             status->setText("VPN status\nConnected");
-            locationMap->setLoading(QStringLiteral("Locating VPN server..."));
 
             const QString connectedServerIp = selectedServerIp;
-            requestIpLocation(
-                geoLookup,
-                &window,
-                connectedServerIp,
-                [&, connectedServerIp](double latitude, double longitude,
-                                       const QString& place) {
-                    if (vpnConnected && selectedServerIp == connectedServerIp)
-                        locationMap->setLocation(latitude, longitude, place);
-                },
-                [&, connectedServerIp]() {
-                    if (vpnConnected && selectedServerIp == connectedServerIp)
-                        locationMap->setUnavailable(QStringLiteral("VPN server location unavailable"));
-                });
+            double kLat = 0.0, kLon = 0.0;
+            QString kPlace;
+            if (getKnownServerLocation(connectedServerIp, kLat, kLon, kPlace))
+            {
+                locationMap->setLocation(kLat, kLon, kPlace);
+            }
+            else
+            {
+                locationMap->setLoading(QStringLiteral("Locating VPN server..."));
+                requestIpLocation(
+                    geoLookup,
+                    &window,
+                    connectedServerIp,
+                    [&](double latitude, double longitude, const QString& place) {
+                        if (vpnConnected)
+                            locationMap->setLocation(latitude, longitude, place);
+                    },
+                    [&]() {
+                        if (vpnConnected)
+                            locationMap->setUnavailable(QStringLiteral("VPN server location unavailable"));
+                    });
+            }
         }
 
         if (clientOutputBuffer.size() > 4096)
