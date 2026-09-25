@@ -96,7 +96,7 @@ if(BUILD_FRONTEND)
 endif()
 
 option(BUILD_TESTS "Build validation and integration tests" ON)
-if(BUILD_TESTS)
+if(BUILD_TESTS AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/tests/layer3_test.cpp")
     add_executable(test_layer3 tests/layer3_test.cpp $<TARGET_OBJECTS:vpn_core_objects>)
     target_link_libraries(test_layer3 PRIVATE CustomVPN::Sodium Threads::Threads)
     target_include_directories(test_layer3 PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/crypto)
