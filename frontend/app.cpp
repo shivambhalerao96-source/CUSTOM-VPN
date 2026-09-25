@@ -12,10 +12,6 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QLabel>
-#include <QNetworkAccessManager>
-#include <QNetworkDiskCache>
-#include <QNetworkReply>
-#include <QNetworkRequest>
 #include <QPainter>
 #include <QPropertyAnimation>
 #include <QProcess>
@@ -109,53 +105,6 @@ quint64 interfaceBytes()
     return total;
 }
 
-using LocationCallback = std::function<void(double, double, const QString&)>;
-using LocationFailureCallback = std::function<void()>;
-
-void requestIpLocation(QNetworkAccessManager* network,
-                       QObject* context,
-                       const QString& ip,
-                       LocationCallback onSuccess,
-                       LocationFailureCallback onFailure)
-{
-    const QString endpoint = ip.isEmpty()
-        ? QStringLiteral("https://ipapi.co/json/")
-        : QStringLiteral("https://ipapi.co/%1/json/").arg(ip);
-    QNetworkRequest request{QUrl(endpoint)};
-    request.setHeader(QNetworkRequest::UserAgentHeader,
-                      QStringLiteral("CustomVPN/1.0"));
-    QNetworkReply* reply = network->get(request);
-    QObject::connect(reply, &QNetworkReply::finished, context, [reply,
-                                                                 onSuccess,
-                                                                 onFailure]() {
-        if (reply->error() != QNetworkReply::NoError)
-        {
-            onFailure();
-            reply->deleteLater();
-            return;
-        }
-
-        const QJsonDocument document = QJsonDocument::fromJson(reply->readAll());
-        const QJsonObject data = document.object();
-        const QJsonValue latitude = data.value(QStringLiteral("latitude"));
-        const QJsonValue longitude = data.value(QStringLiteral("longitude"));
-        if (!latitude.isDouble() || !longitude.isDouble())
-        {
-            onFailure();
-            reply->deleteLater();
-            return;
-        }
-
-        const QString city = data.value(QStringLiteral("city")).toString();
-        const QString country = data.value(QStringLiteral("country_name")).toString();
-        const QString place = city.isEmpty() || country.isEmpty()
-            ? (city.isEmpty() ? country : city)
-            : city + QStringLiteral(", ") + country;
-        onSuccess(latitude.toDouble(), longitude.toDouble(), place);
-        reply->deleteLater();
-    });
-}
-
 QIcon statusDotIcon(const QColor& color)
 {
     QPixmap pixmap(14, 14);
@@ -172,18 +121,10 @@ class LocationMapWidget final : public QWidget
 {
 public:
     explicit LocationMapWidget(QWidget* parent = nullptr)
-        : QWidget(parent), m_tileNetwork(this)
+        : QWidget(parent)
     {
         setMinimumSize(300, 210);
         setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-
-        auto* cache = new QNetworkDiskCache(this);
-        const QString cachePath = QStandardPaths::writableLocation(
-            QStandardPaths::CacheLocation) + QStringLiteral("/custom-vpn-map");
-        QDir().mkpath(cachePath);
-        cache->setCacheDirectory(cachePath);
-        cache->setMaximumCacheSize(64 * 1024 * 1024);
-        m_tileNetwork.setCache(cache);
     }
 
     void setLoading(const QString& message = QStringLiteral("Finding your location..."))
@@ -219,7 +160,6 @@ public:
         m_place = place.isEmpty() ? QStringLiteral("Unknown location") : place;
         m_hasLocation = true;
         m_message.clear();
-        requestTiles();
         update();
     }
 
@@ -286,46 +226,6 @@ private:
         return QString::number(x) + QLatin1Char(':') + QString::number(y);
     }
 
-    void requestTiles()
-    {
-        const int tileCount = 1 << m_zoom;
-        m_firstTileX = static_cast<int>(std::floor(m_centerWorldX / kTileSize)) - 1;
-        m_firstTileY = static_cast<int>(std::floor(m_centerWorldY / kTileSize)) - 1;
-        m_tiles.clear();
-
-        for (int tileX = m_firstTileX; tileX <= m_firstTileX + 2; ++tileX)
-        {
-            for (int tileY = m_firstTileY; tileY <= m_firstTileY + 2; ++tileY)
-            {
-                if (tileY < 0 || tileY >= tileCount)
-                    continue;
-
-                const int wrappedX = ((tileX % tileCount) + tileCount) % tileCount;
-                const QUrl url(QStringLiteral("https://tile.openstreetmap.org/%1/%2/%3.png")
-                                   .arg(m_zoom)
-                                   .arg(wrappedX)
-                                   .arg(tileY));
-                QNetworkRequest request(url);
-                request.setHeader(QNetworkRequest::UserAgentHeader,
-                                  QStringLiteral("CustomVPN/1.0"));
-                QNetworkReply* reply = m_tileNetwork.get(request);
-                const QString key = tileKey(tileX, tileY);
-                QObject::connect(reply, &QNetworkReply::finished, this,
-                                 [this, reply, key]() {
-                    if (reply->error() == QNetworkReply::NoError)
-                    {
-                        const QImage image = QImage::fromData(reply->readAll());
-                        if (!image.isNull())
-                            m_tiles.insert(key, image);
-                    }
-                    reply->deleteLater();
-                    update();
-                });
-            }
-        }
-    }
-
-    QNetworkAccessManager m_tileNetwork;
     QHash<QString, QImage> m_tiles;
     double m_centerWorldX = 0.0;
     double m_centerWorldY = 0.0;
@@ -447,22 +347,22 @@ int main(int argc, char *argv[])
                 connectivity = QStringLiteral("Slow · %1 ms").arg(state.latencyMs);
             }
 
-            QString load = QStringLiteral("Load: unavailable");
-            if (state.activeClients >= 0 && state.clientCapacity > 0)
-            {
-                const int loadPercent = qBound(
-                    0, state.activeClients * 100 / state.clientCapacity, 100);
-                load = QStringLiteral("Load: %1/%2 active (%3%)")
-                           .arg(state.activeClients)
-                           .arg(state.clientCapacity)
-                           .arg(loadPercent);
-            }
+            // QString load = QStringLiteral("Load: unavailable");
+            // if (state.activeClients >= 0 && state.clientCapacity > 0)
+            // {
+            //     const int loadPercent = qBound(
+            //         0, state.activeClients * 100 / state.clientCapacity, 100);
+            //     load = QStringLiteral("Load: %1/%2 active (%3%)")
+            //                .arg(state.activeClients)
+            //                .arg(state.clientCapacity)
+            //                .arg(loadPercent);
+            // }
 
             QString label = state.name + QStringLiteral("  •  ") + state.ip;
-            if (state.recommended)
-                label += QStringLiteral("  |  Recommended");
-            label += QStringLiteral("  |  ") + connectivity +
-                     QStringLiteral("  |  ") + load;
+            // if (state.recommended)
+            //     label += QStringLiteral("  |  Recommended");
+            // label += QStringLiteral("  |  ") + connectivity ;
+            //          //QStringLiteral("  |  ") + load;
             server->setItemIcon(index, statusDotIcon(dotColor));
             server->setItemText(index, label);
         }
@@ -525,7 +425,7 @@ int main(int argc, char *argv[])
         return label;
     };
     auto* speed = addMetric("Internet speed", 0, 0);
-    auto* ipv4 = addMetric("IPv4 address", 0, 1);
+    auto* ipv4 = addMetric("Public IPv4", 0, 1);
     auto* locationMap = new LocationMapWidget;
     locationMap->setObjectName("locationMap");
     metrics->addWidget(locationMap, 1, 0);
@@ -571,7 +471,6 @@ int main(int argc, char *argv[])
         speedClock.restart();
         speed->setText(QStringLiteral("Internet speed\n%1 KiB/s")
                            .arg(speedKiB, 0, 'f', 1));
-        ipv4->setText(QStringLiteral("IPv4 address\n%1").arg(localIpv4Address()));
     });
 
     auto* client = new QProcess(&window);
@@ -588,29 +487,7 @@ int main(int argc, char *argv[])
     }
     client->setProcessChannelMode(QProcess::MergedChannels);
     bool vpnConnected = false;
-    bool userLocationReady = false;
-    double userLatitude = 0.0;
-    double userLongitude = 0.0;
-    QString userPlace;
     QString clientOutputBuffer;
-
-    auto* geoLookup = new QNetworkAccessManager(&window);
-    requestIpLocation(
-        geoLookup,
-        &window,
-        QString(),
-        [&](double latitude, double longitude, const QString& place) {
-            userLatitude = latitude;
-            userLongitude = longitude;
-            userPlace = place;
-            userLocationReady = true;
-            if (!vpnConnected)
-                locationMap->setLocation(latitude, longitude, place);
-        },
-        [&]() {
-            if (!vpnConnected)
-                locationMap->setUnavailable();
-        });
 
     QObject::connect(client, &QProcess::readyReadStandardOutput, &window, [&]() {
         // Drain client output so a verbose VPN process cannot block on a full
@@ -635,22 +512,7 @@ int main(int argc, char *argv[])
         {
             vpnConnected = true;
             status->setText("VPN status\nConnected");
-            locationMap->setLoading(QStringLiteral("Locating VPN server..."));
-
-            const QString connectedServerIp = selectedServerIp;
-            requestIpLocation(
-                geoLookup,
-                &window,
-                connectedServerIp,
-                [&, connectedServerIp](double latitude, double longitude,
-                                       const QString& place) {
-                    if (vpnConnected && selectedServerIp == connectedServerIp)
-                        locationMap->setLocation(latitude, longitude, place);
-                },
-                [&, connectedServerIp]() {
-                    if (vpnConnected && selectedServerIp == connectedServerIp)
-                        locationMap->setUnavailable(QStringLiteral("VPN server location unavailable"));
-                });
+            locationMap->setUnavailable(QStringLiteral("Location unavailable without network lookup"));
         }
 
         if (clientOutputBuffer.size() > 4096)
@@ -662,6 +524,7 @@ int main(int argc, char *argv[])
     refreshMetrics->start(1000);
 
     QObject::connect(runButton, &QPushButton::clicked, &window, [=, &selectedServerIp]() {
+        ipv4->setText(QStringLiteral("IPv4 address\n%1").arg(selectedServerIp));
         if (client->state() != QProcess::NotRunning)
             return;
         client->start(client->program(), {selectedServerIp});
@@ -671,13 +534,12 @@ int main(int argc, char *argv[])
     QObject::connect(client, &QProcess::finished, &window, [&](int, QProcess::ExitStatus) {
         vpnConnected = false;
         status->setText("VPN status\nDisconnected");
+        ipv4->setText(QStringLiteral("IPv4 address\n%1").arg(localIpv4Address()));
         server->setEnabled(true);
-        if (userLocationReady)
-            locationMap->setLocation(userLatitude, userLongitude, userPlace);
-        else
-            locationMap->setLoading();
+        locationMap->setUnavailable(QStringLiteral("Location unavailable without network lookup"));
     });
     QObject::connect(closeButton, &QPushButton::clicked, &window, [&]() {
+        ipv4->setText(QStringLiteral("IPv4 address\n%1").arg(localIpv4Address()));
         if (client->state() != QProcess::NotRunning)
         {
             status->setText("VPN status\nDisconnecting...");
