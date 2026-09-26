@@ -3,6 +3,8 @@
 A custom VPN implementation built from scratch, with a focus on a minimal TUN-based architecture, UDP transport, and Libsodium-backed crypto.
 This project is only supported on __Linux__.
 
+(For a complete understanding of the project, refer to the [Project Documentation](./Project_Documentation.pdf).)
+
 ## High-level architecture
 
 This project is structured as a small VPN system with three main runtime parts:
