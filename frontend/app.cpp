@@ -886,7 +886,30 @@ int main(int argc, char *argv[])
         status->setText("VPN status\nDisconnected");
         ipv4->setText(QStringLiteral("IPv4 address\n%1").arg(localIpv4Address()));
         server->setEnabled(true);
-        locationMap->setUnavailable(QStringLiteral("Location unavailable without network lookup"));
+        if (userLocationReady)
+        {
+            locationMap->setLocation(userLatitude, userLongitude, userPlace);
+        }
+        else
+        {
+            locationMap->setLoading();
+            requestIpLocation(
+                geoLookup,
+                &window,
+                QString(),
+                [&](double latitude, double longitude, const QString& place) {
+                    userLatitude = latitude;
+                    userLongitude = longitude;
+                    userPlace = place;
+                    userLocationReady = true;
+                    if (!vpnConnected)
+                        locationMap->setLocation(latitude, longitude, place);
+                },
+                [&]() {
+                    if (!vpnConnected)
+                        locationMap->setUnavailable();
+                });
+        }
     });
     QObject::connect(closeButton, &QPushButton::clicked, &window, [&]() {
         torPollTimer->stop();
