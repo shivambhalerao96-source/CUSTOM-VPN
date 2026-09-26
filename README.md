@@ -167,46 +167,63 @@ The crypto layer has been validated by:
 
 These checks are part of the project’s layered protocol validation story and are documented further in the `docs/` directory.
 
-## Running the code
-After cloning the repository first install the libsodium library used for cryptography and qt6 library needed for frontend integration and cmake files for running the vpn frontend
+## Getting Started
 
+Follow these step-by-step instructions to set up, build, and run the Custom VPN desktop application.
+
+### Step 1: Clone the Repository
+
+Fork the repository on GitHub, then clone your fork to your local machine:
+
+```bash
+git clone https://github.com/<your-username>/CUSTOM-VPN.git
+cd CUSTOM-VPN
 ```
+
+### Step 2: Install Dependencies
+
+The project requires a C++17 compiler, CMake, Libsodium (for cryptography), and Qt6 (for the desktop UI):
+
+```bash
 sudo apt update
-sudo apt install build-essential cmake qt6-base-dev
-sudo apt install libsodium-dev
+sudo apt install -y build-essential cmake libsodium-dev qt6-base-dev
 ```
-## Compilation
 
+### Step 3: Build the Project
+
+Generate the build system using CMake and compile:
 
 ```bash
-mkdir -p build
-cmake -S . -B build
+cmake -B build
 cmake --build build
 ```
-These commands create the build folder configures the projects and compiles all the required executables
 
-To run compile it again only execute the command
+> **Tip:** If you make code edits later and only want to recompile, simply run:
+> ```bash
+> cmake --build build
+> ```
 
-```bash
+### Step 4: Run the VPN Frontend
 
-cmake --build build
-```
-after that go inside the build directory and run the required executable 
-
-for client in cli 
+The application requires root privileges to create the Linux `tun0` virtual network adapter and manage routes. Launch the GUI frontend with `sudo`:
 
 ```bash
-sudo ./vpn_client
+sudo ./build/vpn_frontend
 ```
 
-for server in cli 
+Once the application opens:
+1. Select your target VPN server location from the dropdown menu (e.g. USA, Europe, or Asia).
+2. Click **Run VPN** to initiate the handshake and establish the encrypted tunnel.
+3. The dashboard and map will update to reflect your secure connection.
+4. Click **Disconnect** anytime to tear down the tunnel and cleanly restore your default network routes.
+
+---
+
+### Optional: Running Client in CLI Mode
+
+If you prefer using the command line without the graphical desktop interface, you can run the standalone client binary directly:
 
 ```bash
-sudo ./vpn_server1
-```
-
-for vpn front end 
-```bash
-sudo ./vpn_frontend
+sudo ./build/vpn_client <SERVER_IP>
 ```
 
