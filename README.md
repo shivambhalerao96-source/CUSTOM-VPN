@@ -1,6 +1,7 @@
 # CUSTOM-VPN
 
 A custom VPN implementation built from scratch, with a focus on a minimal TUN-based architecture, UDP transport, and Libsodium-backed crypto.
+This project is only supported on __Linux__.
 
 ## High-level architecture
 
