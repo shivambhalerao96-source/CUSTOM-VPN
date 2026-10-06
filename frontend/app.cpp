@@ -113,7 +113,7 @@ quint64 interfaceBytes()
 
 bool getKnownServerLocation(const QString& ip, double& lat, double& lon, QString& place)
 {
-    if (ip == QStringLiteral("35.226.148.101"))
+    if (ip == QStringLiteral("136.113.138.207") || ip == QStringLiteral("35.226.148.101"))
     {
         lat = 41.2619;
         lon = -95.8608;
@@ -542,9 +542,7 @@ int main(int argc, char *argv[])
     auto* controlsLayout = new QHBoxLayout(controls);
     auto* server = new QComboBox;
     std::vector<ServerState> serverStates = {
-        {QStringLiteral("USA VPN"), QStringLiteral("35.226.148.101")},
-        {QStringLiteral("Europe VPN"), QStringLiteral("34.105.188.210")},
-        {QStringLiteral("Asia VPN"), QStringLiteral("34.84.46.243")}
+        {QStringLiteral("USA VPN"), QStringLiteral("136.113.138.207")}
     };
     for (const ServerState& state : serverStates)
         server->addItem(statusDotIcon(QColor(QStringLiteral("#8c8585"))),
